@@ -258,17 +258,6 @@ body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Microsoft
 </head>
 <body>
 
-<script>
-const _PWD = "gwsc2026";
-if (sessionStorage.getItem('auth') !== '1') {
-  const _in = prompt('请输入访问密码：');
-  if (_in !== _PWD) {
-    document.body.innerHTML = '<div style="text-align:center;margin-top:40vh;color:#ef4444;font-size:16px;font-family:sans-serif;">密码错误，请刷新页面重试</div>';
-  } else {
-    sessionStorage.setItem('auth','1');
-  }
-}
-</script>
 
 <div class="topbar">
   <div>

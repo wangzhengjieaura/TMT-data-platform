@@ -1,0 +1,2472 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>新兴产业关键指标观测平台</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+:root {
+  --bg:#0f1117;--bg2:#1a1d2e;--bg3:#232640;--border:#2e3250;
+  --text:#e2e8f0;--text2:#94a3b8;--text3:#64748b;
+  --accent:#6366f1;--accent2:#818cf8;
+  --green:#10b981;--yellow:#f59e0b;--red:#ef4444;
+  --orange:#f97316;--pink:#ec4899;--cyan:#06b6d4;
+  --purple:#a855f7;--teal:#14b8a6;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'PingFang SC','Microsoft YaHei',sans-serif;font-size:13px;}
+
+/* 顶栏 */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:100;}
+.topbar h1{font-size:16px;font-weight:700;color:var(--text);letter-spacing:1px;}
+.topbar .sub{font-size:12px;color:var(--text3);}
+.topbar .tag{background:var(--accent);color:#fff;font-size:11px;padding:2px 8px;border-radius:4px;margin-left:auto;}
+
+/* Tab导航 */
+.tabs{display:flex;gap:4px;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 24px;overflow-x:auto;}
+.tab{padding:10px 16px;font-size:12px;color:var(--text3);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;transition:all .2s;}
+.tab:hover{color:var(--text);}
+.tab.active{color:var(--accent2);border-bottom-color:var(--accent2);}
+
+/* 主体 */
+.main{padding:20px 24px;max-width:1400px;margin:0 auto;}
+.section{display:none;}
+.section.active{display:block;}
+
+/* 层级说明 */
+.level-desc{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:20px;display:flex;gap:24px;align-items:center;}
+.level-desc .step{text-align:center;}
+.level-desc .step .num{font-size:20px;font-weight:800;color:var(--accent2);}
+.level-desc .step .label{font-size:11px;color:var(--text3);margin-top:2px;}
+.level-arrow{color:var(--text3);font-size:18px;}
+
+/* 卡片网格 */
+.grid{display:grid;gap:14px;}
+.grid-2{grid-template-columns:repeat(2,1fr);}
+.grid-3{grid-template-columns:repeat(3,1fr);}
+.grid-4{grid-template-columns:repeat(4,1fr);}
+
+/* 模块卡片 */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:16px;}
+.card-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.card-icon{font-size:18px;}
+.card-title{font-size:14px;font-weight:700;color:var(--text);}
+.card-badge{font-size:10px;padding:2px 6px;border-radius:3px;margin-left:auto;}
+
+/* 指标行 */
+.indicator-group{margin-bottom:10px;}
+.ind-group-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);}
+.ind-item{display:flex;gap:6px;padding:6px 4px;border-bottom:1px solid rgba(46,50,80,.4);align-items:flex-start;cursor:pointer;border-radius:4px;position:relative;transition:background .15s;}
+.ind-item:last-child{border-bottom:none;}
+.ind-item:hover{background:rgba(99,102,241,.07);}
+.ind-item::after{content:'📈';position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:11px;opacity:0;transition:opacity .2s;}
+.ind-item:hover::after{opacity:.7;}
+.ind-name{flex:0 0 auto;width:160px;font-weight:600;color:var(--text);font-size:12px;}
+.ind-detail{flex:1;}
+.ind-logic{font-size:11px;color:var(--text2);line-height:1.5;}
+.ind-meta{display:flex;gap:6px;margin-top:3px;flex-wrap:wrap;}
+.tag-src{font-size:10px;background:rgba(99,102,241,.15);color:var(--accent2);padding:1px 6px;border-radius:3px;}
+.tag-freq{font-size:10px;background:rgba(16,185,129,.12);color:var(--green);padding:1px 6px;border-radius:3px;}
+.tag-bull{font-size:10px;background:rgba(16,185,129,.15);color:var(--green);padding:1px 6px;border-radius:3px;}
+.tag-bear{font-size:10px;background:rgba(239,68,68,.15);color:var(--red);padding:1px 6px;border-radius:3px;}
+
+/* 赛道大标题 */
+.track-title{font-size:13px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px;margin:20px 0 12px;}
+.track-title::before{content:'';display:inline-block;width:4px;height:16px;border-radius:2px;}
+.track-title.c-ai::before{background:var(--cyan);}
+.track-title.c-semi::before{background:var(--purple);}
+.track-title.c-comm::before{background:var(--green);}
+.track-title.c-sw::before{background:var(--accent2);}
+.track-title.c-ce::before{background:var(--yellow);}
+.track-title.c-equip::before{background:var(--orange);}
+.track-title.c-pcb::before{background:var(--teal);}
+.track-title.c-theme::before{background:var(--pink);}
+.track-title.c-disp::before{background:#38bdf8;}
+.track-title.c-cal::before{background:var(--accent2);}
+
+/* 颜色点 */
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;flex-shrink:0;margin-top:2px;}
+
+/* 无数据红点（未接入数据的指标自动标注）*/
+.ind-item.no-data .ind-name::after{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--red);margin-left:5px;vertical-align:middle;opacity:.9;}
+
+/* 整体层面大表格 */
+.overview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.ov-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px;}
+.ov-card .ov-title{font-size:12px;font-weight:700;color:var(--accent2);margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.ov-card .ov-def{font-size:12px;color:var(--text);margin-bottom:6px;}
+.ov-card .ov-bull{font-size:11px;color:var(--green);margin-bottom:2px;}
+.ov-card .ov-bear{font-size:11px;color:var(--red);margin-bottom:2px;}
+.ov-card .ov-src{font-size:10px;color:var(--text3);margin-top:6px;}
+
+/* 轮动规律矩阵 */
+.rotation-table{width:100%;border-collapse:collapse;font-size:12px;}
+.rotation-table th{background:var(--bg3);color:var(--text2);padding:8px 12px;text-align:left;border:1px solid var(--border);font-weight:600;}
+.rotation-table td{padding:8px 12px;border:1px solid var(--border);color:var(--text);vertical-align:top;line-height:1.5;}
+.rotation-table tr:nth-child(even) td{background:rgba(26,29,46,.5);}
+
+/* 子行业对比卡片 */
+.sub4-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.sub4-card{border-radius:10px;padding:14px;border:1px solid var(--border);}
+.sub4-card.elec{background:linear-gradient(135deg,rgba(168,85,247,.08),var(--bg2));}
+.sub4-card.comm{background:linear-gradient(135deg,rgba(16,185,129,.08),var(--bg2));}
+.sub4-card.comp{background:linear-gradient(135deg,rgba(99,102,241,.08),var(--bg2));}
+.sub4-card.media{background:linear-gradient(135deg,rgba(245,158,11,.08),var(--bg2));}
+.sub4-title{font-size:14px;font-weight:800;margin-bottom:10px;}
+.sub4-card.elec .sub4-title{color:var(--purple);}
+.sub4-card.comm .sub4-title{color:var(--green);}
+.sub4-card.comp .sub4-title{color:var(--accent2);}
+.sub4-card.media .sub4-title{color:var(--yellow);}
+.sub4-model{font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.5;background:rgba(0,0,0,.2);padding:6px 8px;border-radius:4px;}
+.sub4-kpi{display:flex;flex-direction:column;gap:4px;}
+.sub4-kpi-item{font-size:11px;color:var(--text2);display:flex;gap:6px;align-items:flex-start;}
+
+/* 注释框 */
+.note{background:rgba(99,102,241,.08);border-left:3px solid var(--accent);border-radius:4px;padding:10px 14px;font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6;}
+.section-title{font-size:15px;font-weight:800;color:var(--text);margin:0 0 14px;display:flex;align-items:center;gap:8px;}
+.section-title span{color:var(--accent2);}
+
+/* 数据源可得性 */
+.avail-tier{margin-bottom:24px;}
+.avail-tier-title{font-size:13px;font-weight:800;padding:6px 14px;border-radius:6px;margin-bottom:12px;display:inline-flex;align-items:center;gap:8px;}
+.avail-tier-title.t-free{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);}
+.avail-tier-title.t-part{background:rgba(245,158,11,.12);color:var(--yellow);border:1px solid rgba(245,158,11,.3);}
+.avail-tier-title.t-paid{background:rgba(239,68,68,.10);color:var(--red);border:1px solid rgba(239,68,68,.25);}
+.tag-free{font-size:10px;background:rgba(16,185,129,.18);color:var(--green);padding:1px 7px;border-radius:3px;white-space:nowrap;}
+.tag-partial{font-size:10px;background:rgba(245,158,11,.18);color:var(--yellow);padding:1px 7px;border-radius:3px;white-space:nowrap;}
+.tag-paid-b{font-size:10px;background:rgba(239,68,68,.15);color:var(--red);padding:1px 7px;border-radius:3px;white-space:nowrap;}
+.src-link{font-size:10px;color:var(--cyan);text-decoration:none;word-break:break-all;}
+.src-link:hover{text-decoration:underline;}
+.avail-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:6px;}
+.avail-table th{background:var(--bg3);color:var(--text3);padding:7px 10px;text-align:left;border:1px solid var(--border);font-weight:600;font-size:11px;}
+.avail-table td{padding:7px 10px;border:1px solid var(--border);color:var(--text);vertical-align:top;line-height:1.5;}
+.avail-table tr:nth-child(even) td{background:rgba(26,29,46,.4);}
+.avail-table td.name-col{font-weight:700;color:var(--accent2);white-space:nowrap;}
+
+/* ── 大厂财报日历专用样式 ── */
+.cal-urgent-bar{display:flex;gap:10px;overflow-x:auto;padding-bottom:6px;margin-bottom:20px;}
+.cal-urgent-card{flex:0 0 auto;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:8px;padding:10px 14px;min-width:200px;}
+.cal-urgent-card .uc-days{font-size:22px;font-weight:800;color:var(--red);}
+.cal-urgent-card .uc-days span{font-size:11px;font-weight:400;color:var(--text3);margin-left:4px;}
+.cal-urgent-card .uc-co{font-size:12px;font-weight:700;color:var(--text);margin-top:4px;}
+.cal-urgent-card .uc-ev{font-size:11px;color:var(--text2);margin-top:2px;}
+.cal-urgent-card.yellow{background:rgba(245,158,11,.10);border-color:rgba(245,158,11,.35);}
+.cal-urgent-card.yellow .uc-days{color:var(--yellow);}
+
+.cal-section-title{font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;padding:6px 0;border-bottom:1px solid var(--border);margin-bottom:12px;}
+.cal-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:24px;}
+.cal-table th{background:var(--bg3);color:var(--text3);padding:8px 12px;text-align:left;border:1px solid var(--border);font-weight:600;font-size:11px;}
+.cal-table td{padding:9px 12px;border:1px solid var(--border);color:var(--text);vertical-align:top;line-height:1.5;}
+.cal-table tr:nth-child(even) td{background:rgba(26,29,46,.4);}
+.cal-table td.co-col{font-weight:700;white-space:nowrap;}
+.badge-days{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap;}
+.badge-days.red{background:rgba(239,68,68,.2);color:var(--red);}
+.badge-days.yellow{background:rgba(245,158,11,.18);color:var(--yellow);}
+.badge-days.gray{background:rgba(100,116,139,.15);color:var(--text3);}
+.badge-p0{background:rgba(239,68,68,.18);color:var(--red);font-size:10px;padding:1px 6px;border-radius:3px;}
+.badge-p1{background:rgba(245,158,11,.15);color:var(--yellow);font-size:10px;padding:1px 6px;border-radius:3px;}
+
+/* ── 图表Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:var(--bg);z-index:500;overflow-y:auto;}
+.modal-overlay.open{display:block;}
+.modal-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:10;}
+.modal-back{cursor:pointer;color:var(--accent2);font-size:12px;padding:5px 14px;border:1px solid var(--accent);border-radius:5px;background:transparent;white-space:nowrap;}
+.modal-back:hover{background:var(--accent);color:#fff;}
+.modal-title{font-size:15px;font-weight:700;color:var(--text);}
+.modal-body{padding:20px 24px;max-width:1200px;margin:0 auto;}
+.chart-meta-row{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+.time-range-btns{display:flex;gap:6px;margin-bottom:16px;}
+.time-btn{padding:4px 14px;border:1px solid var(--border);border-radius:4px;background:var(--bg2);color:var(--text2);cursor:pointer;font-size:12px;transition:all .15s;}
+.time-btn.active{border-color:var(--accent2);color:var(--accent2);background:rgba(99,102,241,.12);}
+.time-btn:hover{border-color:var(--accent);color:var(--text);}
+#chart-box{width:100%;height:420px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;}
+.no-data-box{display:flex;flex-direction:column;align-items:center;justify-content:center;height:420px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;color:var(--text3);gap:8px;}
+.no-data-box .nd-icon{font-size:40px;}
+.no-data-box .nd-title{font-size:13px;font-weight:600;color:var(--text2);}
+.no-data-box .nd-hint{font-size:11px;color:var(--text3);}
+.modal-info-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:14px 18px;margin-top:16px;}
+.modal-info-card .mic-row{display:flex;gap:8px;margin-bottom:6px;font-size:11px;color:var(--text2);}
+.modal-info-card .mic-row:last-child{margin-bottom:0;}
+.mic-label{color:var(--text3);flex:0 0 70px;}
+
+/* ── 迷你预览图 ── */
+.ind-sparkline{flex:0 0 150px;height:52px;margin-left:6px;}
+@media(max-width:768px){.ind-sparkline{display:none;}}
+
+/* 响应式 */
+@media(max-width:900px){
+  .grid-4,.sub4-grid,.overview-grid{grid-template-columns:repeat(2,1fr);}
+  .grid-3{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:600px){
+  .grid-2,.grid-3,.grid-4,.sub4-grid,.overview-grid{grid-template-columns:1fr;}
+}
+@media(max-width:768px){
+  .topbar{padding:10px 12px;gap:8px;}
+  .topbar h1{font-size:14px;letter-spacing:0;}
+  .topbar .sub{display:none;}
+  .tabs{padding:0 6px;gap:2px;}
+  .tab{padding:8px 10px;font-size:11px;}
+  .main{padding:12px 10px;}
+  .ind-item{flex-direction:column;gap:4px;}
+  .ind-name{width:auto;font-size:13px;}
+  .ind-logic{font-size:12px;}
+  .card{padding:12px 10px;}
+  .rotation-table,.avail-table,.cal-table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .rotation-table th,.rotation-table td,.avail-table th,.avail-table td,.cal-table th,.cal-table td{padding:6px 8px;font-size:11px;min-width:80px;}
+}
+.sub4-chart-box{height:220px;margin-top:8px;}
+.sub4-update-bar{display:flex;align-items:center;flex-wrap:wrap;gap:10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 14px;margin-top:20px;font-size:11px;color:var(--text3);}
+.sub4-update-bar strong{color:var(--accent2);}
+.sub4-sec-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin:16px 0 8px 2px;display:flex;align-items:center;gap:6px;}
+.sub4-sec-label::before{content:'';display:block;width:3px;height:12px;border-radius:2px;background:currentColor;opacity:.5;}
+.sub4-qcard{padding:12px 14px!important;}
+.qc-name{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px;}
+.qc-val{font-size:20px;font-weight:800;line-height:1;}
+.qc-val-unit{font-size:11px;font-weight:400;color:var(--text3);margin-left:2px;}
+.qc-date{font-size:10px;color:var(--text3);margin-top:3px;}
+.qc-hist{display:flex;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);flex-wrap:wrap;}
+.qc-hist-item{font-size:10px;color:var(--text3);}
+.qc-hist-item strong{color:var(--text2);}
+.qc-link{margin-top:8px;}
+.qc-link a{font-size:10px;color:var(--accent);text-decoration:none;word-break:break-all;}
+.qc-link a:hover{text-decoration:underline;}
+.sub4-refcard{padding:12px 14px!important;opacity:.85;}
+.rf-name{font-size:11px;font-weight:700;color:var(--text2);margin-bottom:4px;}
+.rf-meta{font-size:10px;color:var(--text3);line-height:1.5;}
+.rf-badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:9px;font-weight:700;margin-right:4px;background:rgba(100,116,139,.2);color:var(--text3);}
+.rf-link{margin-top:8px;font-size:10px;}
+.rf-link a{color:var(--accent);text-decoration:none;}
+.rf-link a:hover{text-decoration:underline;}
+/* 更新按钮 */
+.update-btn{margin-left:8px;padding:6px 14px;background:rgba(99,102,241,.15);border:1px solid rgba(99,102,241,.4);color:var(--accent2);border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;transition:background .2s,border-color .2s;white-space:nowrap;flex-shrink:0;}
+.update-btn:hover{background:rgba(99,102,241,.28);border-color:var(--accent2);}
+.update-btn:disabled{opacity:.45;cursor:not-allowed;}
+/* 更新弹窗 */
+.update-modal{position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:9999;display:flex;align-items:center;justify-content:center;}
+.update-modal-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px 28px;width:min(560px,92vw);max-height:80vh;display:flex;flex-direction:column;gap:14px;box-shadow:0 24px 60px rgba(0,0,0,.5);}
+.update-modal-title{font-size:15px;font-weight:700;color:var(--text1);}
+.update-modal-log{flex:1;overflow-y:auto;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px 14px;font-family:monospace;font-size:11px;color:var(--text2);line-height:1.7;min-height:160px;max-height:380px;white-space:pre-wrap;word-break:break-all;}
+.update-modal-log .log-ok{color:#34d399;}
+.update-modal-log .log-warn{color:#fbbf24;}
+.update-modal-log .log-err{color:#f87171;}
+.update-modal-log .log-sep{color:var(--text3);border-top:1px solid var(--border);margin:6px 0;display:block;}
+.update-modal-close{align-self:flex-end;padding:7px 20px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;}
+.update-modal-close:hover{opacity:.85;}
+</style>
+</head>
+<body>
+
+
+<div class="topbar">
+  <div>
+    <h1>📊 新兴产业关键指标观测平台</h1>
+    <div class="sub">TMT行业轮动框架 · 多维指标跟踪 · 长城证券策略</div>
+  </div>
+  <div class="tag">长城证券策略 · 2026</div>
+  <button class="update-btn" id="updateBtn" onclick="triggerUpdate()" title="更新日历事件 + 四大子行业数据（需iFinD客户端已打开）">🔄 更新数据</button>
+</div>
+
+<!-- 更新进度弹窗 -->
+<div id="updateModal" class="update-modal" style="display:none">
+  <div class="update-modal-box">
+    <div class="update-modal-title" id="updateModalTitle">🔄 数据更新中…</div>
+    <div class="update-modal-log" id="updateModalLog"></div>
+    <button class="update-modal-close" id="updateModalClose" onclick="closeUpdateModal()" style="display:none">关闭</button>
+  </div>
+</div>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" onclick="switchTab(0)">① 整体层面</div>
+  <div class="tab" onclick="switchTab(1)">📅 大厂财报日历</div>
+  <div class="tab" onclick="switchTab(2)">② 申万四大子行业</div>
+  <div class="tab" onclick="switchTab(3)">🤖 AI算力链</div>
+  <div class="tab" onclick="switchTab(4)">💾 半导体</div>
+  <div class="tab" onclick="switchTab(5)">📡 通信/光通信</div>
+  <div class="tab" onclick="switchTab(6)">💻 软件/IT服务</div>
+  <div class="tab" onclick="switchTab(7)">📱 消费电子</div>
+  <div class="tab" onclick="switchTab(8)">🖥️ 显示/LED/PCB</div>
+  <div class="tab" onclick="switchTab(9)">⚙️ 设备/自动化</div>
+  <div class="tab" onclick="switchTab(10)">🚀 新兴主题</div>
+  <div class="tab" onclick="switchTab(11)">📋 数据源汇总</div>
+</div>
+
+<div class="main">
+
+<!-- ══════════ TAB 0: 整体层面 ══════════ -->
+<div class="section active" id="s0">
+  <div class="section-title">TMT <span>整体层面</span> 跟踪指标</div>
+  <div class="note">整体层面指标用于判断TMT行情启动/过热/轮动的时机。点击任意指标行可查看历史数据图表。</div>
+  <div class="overview-grid">
+    <div class="ov-card">
+      <div class="ov-title">📈 成交占比</div>
+      <div class="ov-def">TMT日成交额 / 全A日成交额</div>
+      <div class="ov-bull">🟢 多头：20%-30%，行情可持续</div>
+      <div class="ov-bull">🟡 警惕：≥35%，开始拥挤</div>
+      <div class="ov-bear">🔴 过热：≥40%-45%，历史高位，内部切换风险</div>
+      <div class="ov-src">来源：Wind / 交易所公告 | 频率：日</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-title">📊 拥挤度指标</div>
+      <div class="ov-def">TMT换手率 / 沪深300换手率（比值）</div>
+      <div class="ov-bull">🟢 多头：比值处历史30%分位以下</div>
+      <div class="ov-bear">🔴 过热：比值历史高位，与全A PE比值同步高</div>
+      <div class="ov-src">来源：Wind | 频率：周/月</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-title">📉 滚动超额收益</div>
+      <div class="ov-def">TMT指数 vs 全A：滚动40日收益差</div>
+      <div class="ov-bull">🟢 健康区间：-10% ~ +10%</div>
+      <div class="ov-bull">🟡 当前：约+5%（中等水平）</div>
+      <div class="ov-bear">🔴 过热：持续+10%以上</div>
+      <div class="ov-src">来源：Wind | 频率：日</div>
+    </div>
+    <div class="ov-card">
+      <div class="ov-title">🔄 内部轮动信号</div>
+      <div class="ov-def">成交占比分位数 ≥95% → 触发高低切</div>
+      <div class="ov-bull">🟢 轮动规律：硬件→软件→应用</div>
+      <div class="ov-bear">🔴 轮动驱动：产业趋势 > 盈利增速 > 估值分位</div>
+      <div class="ov-src">来源：历史复盘（6次案例）</div>
+    </div>
+  </div>
+  <div class="section-title" style="margin-top:24px;">整体层面 <span>实时指标监控</span></div>
+  <div class="note">数据来源：本地 <code>整体层面.xlsx</code>（申万科技指数），更新后重新生成HTML即刷新。点击各行查看历史图表。</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">💹</span><span class="card-title">成交结构（日频）</span><span class="card-badge" style="background:rgba(239,68,68,.15);color:var(--red)">当前极高 ⚠</span></div>
+      <div class="ind-item" data-indid="tmt-share">
+        <div class="ind-name">科技成交额占比</div>
+        <div class="ind-detail">
+          <div class="ind-logic">科技/全A成交额，最新 <strong style="color:var(--red)">42.8%</strong>（2026-06-22）</div>
+          <div class="ind-meta"><span class="tag-src">iFind/Wind</span><span class="tag-freq">日</span><span class="tag-bear">≥40%过热区</span></div>
+        </div>
+        <div class="ind-sparkline" id="spark-tmt-share"></div>
+      </div>
+      <div class="ind-item" data-indid="tmt-share-pct">
+        <div class="ind-name">成交占比历史分位</div>
+        <div class="ind-detail">
+          <div class="ind-logic">当前处于 <strong style="color:var(--red)">98.8% 历史分位</strong>，内部轮动风险极高</div>
+          <div class="ind-meta"><span class="tag-src">iFind/Wind</span><span class="tag-freq">日</span><span class="tag-bear">>95%触发切换信号</span></div>
+        </div>
+        <div class="ind-sparkline" id="spark-tmt-share-pct"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🌡</span><span class="card-title">拥挤度 & 超额收益（周频）</span><span class="card-badge" style="background:rgba(239,68,68,.15);color:var(--red)">极度过热 🔴</span></div>
+      <div class="ind-item" data-indid="tmt-turnover-ratio">
+        <div class="ind-name">换手率比值（科技/沪深300）</div>
+        <div class="ind-detail">
+          <div class="ind-logic">最新 <strong style="color:var(--red)">4.327倍</strong>（2026-06-18），100%历史分位</div>
+          <div class="ind-meta"><span class="tag-src">iFind/Wind</span><span class="tag-freq">周</span><span class="tag-bear">100.0%历史分位</span></div>
+        </div>
+        <div class="ind-sparkline" id="spark-tmt-turnover-ratio"></div>
+      </div>
+      <div class="ind-item" data-indid="tmt-turnover-pct">
+        <div class="ind-name">换手率比值历史分位</div>
+        <div class="ind-detail">
+          <div class="ind-logic">当前 <strong style="color:var(--red)">100% 历史分位</strong>，极度亢奋区间</div>
+          <div class="ind-meta"><span class="tag-src">iFind/Wind</span><span class="tag-freq">周</span></div>
+        </div>
+        <div class="ind-sparkline" id="spark-tmt-turnover-pct"></div>
+      </div>
+      <div class="ind-item" data-indid="tmt-excess">
+        <div class="ind-name">TMT滚动40日超额收益</div>
+        <div class="ind-detail">
+          <div class="ind-logic">相对全A：最新 <strong style="color:var(--red)">+24.07%</strong>（2026-06-18），>+10%属过热区间</div>
+          <div class="ind-meta"><span class="tag-src">iFind/Wind</span><span class="tag-freq">周</span><span class="tag-bear">>+10%历史高位</span></div>
+        </div>
+        <div class="ind-sparkline" id="spark-tmt-excess"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 1: 大厂财报日历（新增）══════════ -->
+<div class="section" id="s_cal">
+  <div class="section-title">📅 <span>大厂财报日历</span> & 关键数据发布预告</div>
+  <div class="note">跟踪影响TMT赛道景气的关键海内外数据/财报发布时间。<strong style="color:var(--red)">红色</strong>=7天内，<strong style="color:var(--yellow)">黄色</strong>=30天内，灰色=30天以上。日期以公司预告为准，如有变动请手动更新。</div>
+  <div class="track-title c-cal">⚡ 近期预警（30天内）</div>
+  <div class="cal-urgent-bar" id="cal-urgent"></div>
+  <div class="track-title c-cal">📋 未来90天全部事件</div>
+  <div id="cal-full"></div>
+</div>
+
+<!-- ══════════ TAB 2: 申万四大子行业 ══════════ -->
+<div class="section" id="s1">
+  <div class="section-title">申万 <span>四大子行业</span> 特征与核心指标</div>
+  <div class="note">四大子行业商业模式差异极大，景气度驱动因子不同，需分别建立专属指标跟踪逻辑。</div>
+  <div class="sub4-grid">
+    <div class="sub4-card elec">
+      <div class="sub4-title">💎 电子</div>
+      <div class="sub4-model"><strong>商业模式：</strong>产品周期驱动。核心是硅周期（库存→产能→价格）+ 新产品渗透率提升。景气领先指标是晶圆厂产能利用率，滞后验证是上市公司毛利率回升。</div>
+      <div class="sub4-kpi">
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--purple)"></span>台积电/中芯国际产能利用率（季报）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--purple)"></span>SIA/WSTS全球半导体月度销售额同比</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--purple)"></span>SEMI设备出货/订单比（Book-to-Bill）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--purple)"></span>DRAM/NAND存储芯片现货价格</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--purple)"></span>国内手机出货量同比 · 集成电路产量同比</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--purple)"></span>全球半导体库存天数（DSI）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--purple)"></span>A股电子营收增速 / 毛利率趋势</div>
+      </div>
+    </div>
+    <div class="sub4-card comm">
+      <div class="sub4-title">📡 通信</div>
+      <div class="sub4-model"><strong>商业模式：</strong>基础设施投资驱动（运营商/互联网资本开支）+ 流量货币化。核心逻辑是CapEx周期，运营商招标传导至设备/器件/材料订单。</div>
+      <div class="sub4-kpi">
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--green)"></span>三大运营商资本开支（季报）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--green)"></span>全球云厂商CapEx（Meta/Google/微软/亚马逊）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--green)"></span>5G/算力网络基站建设进度（工信部月报）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--green)"></span>运营商光缆/光模块招标量（中标信息）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--green)"></span>三大运营商ARPU值趋势</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--green)"></span>AI服务器/数据中心新增数量</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--green)"></span>电信业务收入累计同比</div>
+      </div>
+    </div>
+    <div class="sub4-card comp">
+      <div class="sub4-title">💻 计算机</div>
+      <div class="sub4-model"><strong>商业模式：</strong>政府/企业IT预算驱动，景气高度依赖下游客户数字化投入意愿。政策（信创）是最重要催化剂；ToB商业模式使收入确认有明显季节性（Q4集中交付）。</div>
+      <div class="sub4-kpi">
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--accent2)"></span>政府IT采购预算规模（财政部预算报告）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--accent2)"></span>信创党政军采购进度（招标公告）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--accent2)"></span>金融/医疗/工业IT支出景气度</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--accent2)"></span>国内云计算厂商收入增速（阿里云/华为云）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--accent2)"></span>SaaS/订阅制收入占比趋势</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--accent2)"></span>A股计算机合同负债+预收款（领先指标）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--accent2)"></span>Q4收入占全年比例（季节性验证）</div>
+      </div>
+    </div>
+    <div class="sub4-card media">
+      <div class="sub4-title">📺 传媒</div>
+      <div class="sub4-model"><strong>商业模式：</strong>流量变现（广告/游戏/电商），用户注意力争夺。景气度与宏观消费相关性强，广告收入是经济领先指标。游戏靠版号政策和爆款驱动，与宏观弱相关。</div>
+      <div class="sub4-kpi">
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--yellow)"></span>网络广告市场规模同比（艾瑞/CTR）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--yellow)"></span>游戏版号发放数量 · 游戏实际销售收入同比</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--yellow)"></span>主要平台月活/DAU（微信/抖音/B站/快手）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--yellow)"></span>直播/短视频电商GMV增速（快手/抖音）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--yellow)"></span>全国院线票房月度（iFinD）</div>
+        <div class="sub4-kpi-item"><span class="dot" style="background:var(--yellow)"></span>腾讯/阿里广告收入增速（季报）</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">申万四大子行业 <span>景气驱动因子对比</span></div>
+  <table class="rotation-table">
+    <thead><tr><th>维度</th><th>电子</th><th>通信</th><th>计算机</th><th>传媒</th></tr></thead>
+    <tbody>
+      <tr><td><strong>核心驱动</strong></td><td>硅周期+新品渗透</td><td>运营商/互联网CapEx</td><td>政策(信创)+数字化预算</td><td>广告/流量/内容爆款</td></tr>
+      <tr><td><strong>周期类型</strong></td><td>强周期（库存→产能）</td><td>资本开支周期(3-5年)</td><td>弱周期/政策周期</td><td>弱周期/内容周期</td></tr>
+      <tr><td><strong>景气领先指标</strong></td><td>产能利用率</td><td>运营商资本开支指引</td><td>合同负债/预收款</td><td>广告收入增速</td></tr>
+      <tr><td><strong>盈利季节性</strong></td><td>Q2-Q3较好</td><td>Q3-Q4交付集中</td><td>Q4收入占比最高</td><td>游戏Q1/Q3</td></tr>
+      <tr><td><strong>估值方法</strong></td><td>PE/PB（周期底部PB）</td><td>PE/EV-EBITDA</td><td>PS/PE</td><td>PE/用户价值</td></tr>
+      <tr><td><strong>风险点</strong></td><td>库存高位/价格下跌</td><td>CapEx削减/5G放缓</td><td>信创推进不及预期</td><td>广告增速下滑/监管</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ── 四大子行业景气数据仪表盘 ── -->
+  <div class="section-title" style="margin-top:28px">四大子行业 <span>景气数据仪表盘</span>（29指标全覆盖）</div>
+  <div class="note">
+    <span style="color:var(--green)">●</span> <strong>实时图表</strong>：iFinD EDB月度/季度数据，运行 <code style="background:var(--bg3);padding:1px 5px;border-radius:3px;font-size:10px;">python update_sub4.py</code> 可刷新&nbsp;&nbsp;
+    <span style="color:var(--accent2)">●</span> <strong>季报追踪</strong>：最新季报静态值，附来源链接&nbsp;&nbsp;
+    <span style="color:var(--text3)">●</span> <strong>参考指标</strong>：需外部来源，点击链接查阅
+    <span id="sub4UpdateTime" style="margin-left:auto;display:inline-block;font-size:10px;color:var(--text3);float:right">最后更新：2026-06-24</span>
+  </div>
+
+  <!-- ════ 电子 ════ -->
+  <div class="track-title c-semi">💎 电子 · 景气指标仪表盘（9指标）</div>
+  <div class="sub4-sec-label">实时图表 — iFinD EDB 自动更新</div>
+  <div class="grid grid-2" style="margin-bottom:4px">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🌐</span><span class="card-title">WSTS全球半导体销售额当月同比（%）</span></div>
+      <div class="sub4-chart-box" id="chart-global-semi-yoy"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：WSTS via iFinD S009122155 · 月度 · 最新2026-04 &nbsp;|&nbsp; 全球半导体景气最权威月度跟踪指标</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔵</span><span class="card-title">集成电路产量当月同比（%）</span></div>
+      <div class="sub4-chart-box" id="chart-ic-yoy"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：国家统计局 · 月度 · 最新2026-05 &nbsp;|&nbsp; 国内集成电路产量同比，反映本土晶圆产能利用情况</div>
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📱</span><span class="card-title">国内手机出货量当月同比（%）</span></div>
+      <div class="sub4-chart-box" id="chart-phone-ship-yoy"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：中国信通院 via iFinD S003148643 · 月度 · 最新2026-04 &nbsp;|&nbsp; 手机出货是消费电子最核心终端需求指标</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🏭</span><span class="card-title">电子制造业工业增加值当月同比（%）</span></div>
+      <div class="sub4-chart-box" id="chart-elec-indpro-yoy"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：国家统计局 · 月度 · 最新2026-05 &nbsp;|&nbsp; 计算机/通信/电子设备制造业工增，反映电子产业景气</div>
+    </div>
+  </div>
+
+  <div class="sub4-sec-label">季报追踪 — 需手动查阅更新（来源：各公司IR）</div>
+  <div class="grid grid-4" style="margin-bottom:12px">
+    <div class="card sub4-qcard">
+      <div class="qc-name">台积电产能利用率</div>
+      <div class="qc-val" style="color:var(--purple)">94.5<span class="qc-val-unit">%</span></div>
+      <div class="qc-date">2025-Q1（最新季报）</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">24Q4 <strong>89.9%</strong></div>
+        <div class="qc-hist-item">24Q3 <strong>90.3%</strong></div>
+        <div class="qc-hist-item">24Q2 <strong>84.5%</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://investor.tsmc.com/english/quarterly-results" target="_blank">↗ TSMC Investor Relations</a></div>
+    </div>
+    <div class="card sub4-qcard">
+      <div class="qc-name">中芯国际产能利用率</div>
+      <div class="qc-val" style="color:var(--purple)">89.3<span class="qc-val-unit">%</span></div>
+      <div class="qc-date">2025-Q1（最新季报）</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">24Q4 <strong>89.9%</strong></div>
+        <div class="qc-hist-item">24Q3 <strong>90.4%</strong></div>
+        <div class="qc-hist-item">24Q2 <strong>85.2%</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://www.smics.com/en/site/investors_financial_summary" target="_blank">↗ SMIC Investor Relations</a></div>
+    </div>
+    <div class="card sub4-qcard">
+      <div class="qc-name">A股电子板块营收增速</div>
+      <div class="qc-val" style="color:var(--purple)">+18<span class="qc-val-unit">% YoY</span></div>
+      <div class="qc-date">2024年全年（申万电子）</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">2024H1 <strong>+12%</strong></div>
+        <div class="qc-hist-item">2023年 <strong>+8%</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://data.eastmoney.com/bbsj/" target="_blank">↗ iFinD财务数据</a></div>
+    </div>
+    <div class="card sub4-qcard">
+      <div class="qc-name">A股电子板块毛利率</div>
+      <div class="qc-val" style="color:var(--purple)">23.1<span class="qc-val-unit">%</span></div>
+      <div class="qc-date">2024年全年（申万电子）</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">2024H1 <strong>22.5%</strong></div>
+        <div class="qc-hist-item">2023年 <strong>22.1%</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://data.eastmoney.com/bbsj/" target="_blank">↗ iFinD财务数据</a></div>
+    </div>
+  </div>
+
+  <div class="sub4-sec-label">参考指标 — 外部专业数据源</div>
+  <div class="grid grid-3" style="margin-bottom:24px">
+    <div class="card sub4-refcard">
+      <div class="rf-name">SEMI设备出货/订单比（B2B）</div>
+      <div class="rf-meta"><span class="rf-badge">月度</span>半导体设备新增订单÷出货，>1为扩张信号。由SEMI协会发布，是设备商前瞻指标。</div>
+      <div class="rf-link"><a href="https://www.semi.org/en/products-services/market-data/semiconductor-manufacturing/book-to-bill" target="_blank">↗ SEMI.org · 免费月报</a></div>
+    </div>
+    <div class="card sub4-refcard">
+      <div class="rf-name">DRAM / NAND 存储现货价格</div>
+      <div class="rf-meta"><span class="rf-badge">日度</span>DDR4/DDR5/NAND Flash现货报价，存储芯片价格是半导体景气最灵敏的高频指标之一。</div>
+      <div class="rf-link"><a href="https://www.dramexchange.com/" target="_blank">↗ DRAMeXchange · 日度价格</a></div>
+    </div>
+    <div class="card sub4-refcard">
+      <div class="rf-name">全球半导体库存天数（DSI）</div>
+      <div class="rf-meta"><span class="rf-badge">季度</span>半导体公司平均库存/COGS×天数，库存周期判断核心依据。历史均值约75天，>100天为过剩。</div>
+      <div class="rf-link"><a href="https://en.macromicro.me/charts/28260/semiconductor-inventory-days" target="_blank">↗ MacroMicro · 季度</a></div>
+    </div>
+  </div>
+
+  <!-- ════ 通信 ════ -->
+  <div class="track-title c-comm">📡 通信 · 景气指标仪表盘（7指标）</div>
+  <div class="sub4-sec-label">实时图表 — iFinD EDB 自动更新</div>
+  <div class="grid grid-3" style="margin-bottom:12px">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📶</span><span class="card-title">5G基站累计建设数量（万座）</span></div>
+      <div class="sub4-chart-box" id="chart-5g-stations"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：工信部 via iFinD S016628264 · 季度 · 最新2026-Q1 &nbsp;|&nbsp; 基站进度决定设备/光纤/器件链订单节奏</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📊</span><span class="card-title">电信业务收入累计同比（%）</span></div>
+      <div class="sub4-chart-box" id="chart-telecom-yoy"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：工信部 via iFinD S004383922 · 月度 · 最新2026-04 &nbsp;|&nbsp; 收入增速趋势反映运营商ARPU和流量变现能力</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📡</span><span class="card-title">中国移动ARPU（元/户/月）</span></div>
+      <div class="sub4-chart-box" id="chart-cmobile-arpu"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：中国移动季报 via iFinD S004396045 · 季度 · 最新2025-Q4 &nbsp;|&nbsp; ARPU趋势是运营商收入质量核心指标</div>
+    </div>
+  </div>
+
+  <div class="sub4-sec-label">季报追踪 — 需手动查阅更新（来源：各公司年报/季报）</div>
+  <div class="grid grid-2" style="margin-bottom:12px">
+    <div class="card sub4-qcard">
+      <div class="qc-name">三大运营商CapEx合计（亿元/年）</div>
+      <div class="qc-val" style="color:var(--green)">3330<span class="qc-val-unit">亿元</span></div>
+      <div class="qc-date">2024年全年（移动1741+电信910+联通679）</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">2023年 <strong>3350亿</strong></div>
+        <div class="qc-hist-item">2022年 <strong>3568亿</strong></div>
+        <div class="qc-hist-item">2025指引 <strong>3200±亿</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://www.chinamobileltd.com/en/ir/reports.php" target="_blank">↗ 中国移动年报 · 电信/联通同理</a></div>
+    </div>
+    <div class="card sub4-qcard">
+      <div class="qc-name">全球四大云厂商CapEx（亿美元/季）</div>
+      <div class="qc-val" style="color:var(--green)">765<span class="qc-val-unit">亿美元</span></div>
+      <div class="qc-date">2025-Q1（Meta137+Alphabet172+微软214+亚马逊242）</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">24Q4 <strong>约733亿</strong></div>
+        <div class="qc-hist-item">24Q3 <strong>约600亿</strong></div>
+        <div class="qc-hist-item">24Q2 <strong>约530亿</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://ir.aboutamazon.com/quarterly-results" target="_blank">↗ 亚马逊/微软/谷歌/Meta IR</a></div>
+    </div>
+  </div>
+
+  <div class="sub4-sec-label">参考指标 — 外部专业数据源</div>
+  <div class="grid grid-2" style="margin-bottom:24px">
+    <div class="card sub4-refcard">
+      <div class="rf-name">运营商光缆 / 光模块招标量</div>
+      <div class="rf-meta"><span class="rf-badge">不定期</span>运营商集中采购公告是光模块/光纤景气领先指标，可在中移集采平台或中国政府采购网查询。</div>
+      <div class="rf-link"><a href="http://b2b.10086.cn/b2b/main/listVendorNotice.html" target="_blank">↗ 中移集采平台</a> &nbsp; <a href="https://www.ccgp.gov.cn/" target="_blank">↗ 政府采购网</a></div>
+    </div>
+    <div class="card sub4-refcard">
+      <div class="rf-name">AI服务器 / 数据中心新增数量</div>
+      <div class="rf-meta"><span class="rf-badge">季度</span>CAICT中国信通院发布算力基础设施报告，含数据中心机架/功率/地域分布等统计。</div>
+      <div class="rf-link"><a href="http://www.caict.ac.cn/kxyj/qwfb/qwsj/" target="_blank">↗ 中国信通院 · 算力报告</a></div>
+    </div>
+  </div>
+
+  <!-- ════ 计算机 ════ -->
+  <div class="track-title c-sw">💻 计算机 · 景气指标仪表盘（7指标）</div>
+  <div class="sub4-sec-label">实时图表 — iFinD EDB 自动更新</div>
+  <div class="grid grid-2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">💼</span><span class="card-title">IT服务业收入累计同比（%）</span></div>
+      <div class="sub4-chart-box" id="chart-it-services-yoy"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：工信部软件业统计 via iFinD S027123197 · 月度 · 最新2026-03 &nbsp;|&nbsp; IT服务受益信创和云计算，是软件收入景气综合反映</div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;justify-content:center;padding:20px 14px;">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;font-weight:600;">📌 计算机景气逻辑速查</div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.8;">
+        1. <strong style="color:var(--accent2)">政府预算</strong>：3-4月两会后财政预算披露，是当年信创投入的上限参考<br>
+        2. <strong style="color:var(--accent2)">合同负债</strong>：Q1末合同负债增速>15%，预示全年收入节奏良好<br>
+        3. <strong style="color:var(--accent2)">Q4季节性</strong>：政府/国企项目年末集中验收，Q4收入占全年35~40%<br>
+        4. <strong style="color:var(--accent2)">云收入增速</strong>：阿里云/华为云季报，反映To Cloud迁移景气度
+      </div>
+    </div>
+  </div>
+
+  <div class="sub4-sec-label">季报追踪 — 需手动查阅更新（来源：各公司IR）</div>
+  <div class="grid grid-3" style="margin-bottom:12px">
+    <div class="card sub4-qcard">
+      <div class="qc-name">阿里云收入增速（季度）</div>
+      <div class="qc-val" style="color:var(--accent2)">+18<span class="qc-val-unit">% YoY</span></div>
+      <div class="qc-date">FY2026-Q4 (2026年1-3月)，收入306亿元</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">FY26Q3 <strong>+13%</strong></div>
+        <div class="qc-hist-item">FY26Q2 <strong>+7%</strong></div>
+        <div class="qc-hist-item">FY26Q1 <strong>+6%</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://www.alibabagroup.com/en-US/news" target="_blank">↗ 阿里巴巴投资者关系</a></div>
+    </div>
+    <div class="card sub4-qcard">
+      <div class="qc-name">A股计算机合同负债（亿元）</div>
+      <div class="qc-val" style="color:var(--accent2)">1850<span class="qc-val-unit">亿</span></div>
+      <div class="qc-date">2024年末（申万计算机板块）</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">2023年末 <strong>约1680亿</strong></div>
+        <div class="qc-hist-item">2022年末 <strong>约1520亿</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://data.eastmoney.com/bbsj/" target="_blank">↗ iFinD财务数据聚合</a></div>
+    </div>
+    <div class="card sub4-qcard">
+      <div class="qc-name">Q4收入占全年比例</div>
+      <div class="qc-val" style="color:var(--accent2)">37<span class="qc-val-unit">%</span></div>
+      <div class="qc-date">2024年全年（申万计算机板块）</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">2023年 <strong>38%</strong></div>
+        <div class="qc-hist-item">2022年 <strong>37%</strong></div>
+        <div class="qc-hist-item">历史均值 <strong>36-39%</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://data.eastmoney.com/bbsj/" target="_blank">↗ iFinD财务数据</a></div>
+    </div>
+  </div>
+
+  <div class="sub4-sec-label">参考指标 — 外部专业数据源</div>
+  <div class="grid grid-4" style="margin-bottom:24px">
+    <div class="card sub4-refcard">
+      <div class="rf-name">政府IT采购预算规模</div>
+      <div class="rf-meta"><span class="rf-badge">年度</span>全国两会后财政部公布部门预算，各省/部委IT采购科目。</div>
+      <div class="rf-link"><a href="http://yss.mof.gov.cn/2024zyys/" target="_blank">↗ 财政部预算报告</a></div>
+    </div>
+    <div class="card sub4-refcard">
+      <div class="rf-name">信创采购进度</div>
+      <div class="rf-meta"><span class="rf-badge">不定期</span>国产CPU/OS/数据库政府采购中标公告，跟踪党政/央企信创落地速度。</div>
+      <div class="rf-link"><a href="https://www.ccgp.gov.cn/" target="_blank">↗ 中国政府采购网</a></div>
+    </div>
+    <div class="card sub4-refcard">
+      <div class="rf-name">金融/医疗/工业IT支出</div>
+      <div class="rf-meta"><span class="rf-badge">季度</span>银行科技投入（年报披露），医疗IT招标（阳光采购），工业MES/ERP订单。数据分散，需按行业跟踪。</div>
+      <div class="rf-link"><a href="https://www.ybzhan.cn/" target="_blank">↗ 行业垂直渠道</a></div>
+    </div>
+    <div class="card sub4-refcard">
+      <div class="rf-name">SaaS / 订阅收入占比趋势</div>
+      <div class="rf-meta"><span class="rf-badge">年度</span>衡量软件企业商业模式转型进度，占比提升意味着收入质量改善和估值重估。来源：个股财报。</div>
+      <div class="rf-link"><a href="http://www.cninfo.com.cn/new/index" target="_blank">↗ 巨潮资讯 · 财报查询</a></div>
+    </div>
+  </div>
+
+  <!-- ════ 传媒 ════ -->
+  <div class="track-title c-ce">📺 传媒 · 景气指标仪表盘（6指标）</div>
+  <div class="sub4-sec-label">实时图表 — iFinD EDB 自动更新</div>
+  <div class="grid grid-2" style="margin-bottom:4px">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🎮</span><span class="card-title">国产游戏版号审批数量（个/月）</span></div>
+      <div class="sub4-chart-box" id="chart-game-license"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：国家新闻出版署 via iFinD S019731848 · 月度 · 最新2026-05 &nbsp;|&nbsp; 版号数量是游戏产品管线和收入节奏的领先指标</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🕹️</span><span class="card-title">游戏市场实际销售收入当月同比（%）</span></div>
+      <div class="sub4-chart-box" id="chart-game-revenue-yoy"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：中国音数协 via iFinD S022305719 · 月度 · 最新2026-04 &nbsp;|&nbsp; 游戏行业收入景气最直接指标，含手游/端游/页游</div>
+    </div>
+  </div>
+  <div class="grid grid-2" style="margin-bottom:12px">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🌐</span><span class="card-title">互联网企业收入累计同比（%）</span></div>
+      <div class="sub4-chart-box" id="chart-internet-yoy"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：国家统计局 via iFinD S004422146 · 月度 · 最新2026-03 &nbsp;|&nbsp; 广告/电商/直播景气综合反映，传媒板块宏观背景指标</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🎬</span><span class="card-title">全国院线票房月度（亿元）</span></div>
+      <div class="sub4-chart-box" id="chart-boxoffice"></div>
+      <div style="font-size:10px;color:var(--text3);margin-top:4px;">来源：iFinD S016934145 · 月度 · 最新2026-05 &nbsp;|&nbsp; 春节/暑期/国庆档具有强季节性，含黄金档效应</div>
+    </div>
+  </div>
+
+  <div class="sub4-sec-label">季报追踪 — 需手动查阅更新（来源：各公司季报）</div>
+  <div class="grid grid-3" style="margin-bottom:12px">
+    <div class="card sub4-qcard">
+      <div class="qc-name">腾讯广告收入增速（季度）</div>
+      <div class="qc-val" style="color:var(--yellow)">+20<span class="qc-val-unit">% YoY</span></div>
+      <div class="qc-date">2025-Q1，收入311亿元</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">24Q4 <strong>359亿 +17%</strong></div>
+        <div class="qc-hist-item">24Q3 <strong>300亿 +17%</strong></div>
+        <div class="qc-hist-item">24Q2 <strong>299亿 +19%</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://www.tencent.com/en-us/investors.html" target="_blank">↗ 腾讯投资者关系</a></div>
+    </div>
+    <div class="card sub4-qcard">
+      <div class="qc-name">快手电商GMV增速（季度）</div>
+      <div class="qc-val" style="color:var(--yellow)">+15<span class="qc-val-unit">% YoY</span></div>
+      <div class="qc-date">2025-Q1（快手财报）</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">24Q4 <strong>+13.9%</strong></div>
+        <div class="qc-hist-item">24Q3 <strong>+22.0%</strong></div>
+        <div class="qc-hist-item">24Q2 <strong>+15.1%</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://ir.kuaishou.com/news-releases" target="_blank">↗ 快手投资者关系</a></div>
+    </div>
+    <div class="card sub4-qcard">
+      <div class="qc-name">主要平台月活 MAU（亿）</div>
+      <div class="qc-val" style="color:var(--yellow)">13.94<span class="qc-val-unit">亿</span></div>
+      <div class="qc-date">微信MAU 2025-Q1</div>
+      <div class="qc-hist">
+        <div class="qc-hist-item">B站MAU <strong>3.67亿</strong></div>
+        <div class="qc-hist-item">快手DAU <strong>4.08亿</strong></div>
+        <div class="qc-hist-item">微博MAU <strong>5.82亿</strong></div>
+      </div>
+      <div class="qc-link"><a href="https://ir.bilibili.com/news-releases" target="_blank">↗ B站/快手/腾讯 IR</a></div>
+    </div>
+  </div>
+
+  <div class="sub4-sec-label">参考指标 — 外部专业数据源</div>
+  <div class="grid grid-2" style="margin-bottom:24px">
+    <div class="card sub4-refcard">
+      <div class="rf-name">网络广告市场规模同比（艾瑞/CTR）</div>
+      <div class="rf-meta"><span class="rf-badge">年度/季度</span>iFinD年度数据：2023年+12.4%，2024年+10.6%，2025年+9.5%（预测）。季度数据需艾瑞付费报告。</div>
+      <div class="rf-link"><a href="https://www.iresearch.com.cn/Detail/report" target="_blank">↗ 艾瑞咨询（付费）</a> &nbsp; <a href="http://www.ctrchina.cn/ctr/indexHome.action" target="_blank">↗ CTR媒介智讯</a></div>
+    </div>
+    <div class="card sub4-refcard">
+      <div class="rf-name">全国院线票房实时数据</div>
+      <div class="rf-meta"><span class="rf-badge">日度</span>猫眼/灯塔提供实时大盘数据。iFinD月度数据已纳入图表，日度/周度数据可在猫眼专业版查看。</div>
+      <div class="rf-link"><a href="https://piaofang.maoyan.com/dashboard" target="_blank">↗ 猫眼票房 · 实时大盘</a> &nbsp; <a href="https://ys.endata.cn/BoxOffice/AreaBox" target="_blank">↗ 灯塔专业版</a></div>
+    </div>
+  </div>
+
+  <div class="sub4-update-bar">
+    <span>🔄 <strong>图表数据刷新：</strong>运行 <strong>python update_sub4.py</strong>（需iFinD客户端已打开）后重新打开页面</span>
+    <span>或双击 <strong>open_platform.bat</strong> 一键更新并打开</span>
+    <span style="margin-left:auto;opacity:.6">iFinD EDB · 13个月度/季度序列 · 2023-2026</span>
+  </div>
+</div>
+
+<!-- ══════════ TAB 3: AI算力链 ══════════ -->
+<div class="section" id="s2">
+  <div class="section-title">🤖 <span>AI算力链</span> 指标观测体系</div>
+  <div class="note">AI算力链的核心逻辑：全球云厂商AI CapEx → 算力基础设施建设需求（服务器/数据中心）→ 配套散热/连接/存储需求。上游是英伟达GPU出货，中游是服务器ODM，下游是光模块/液冷/PCB/铜连接。</div>
+
+  <div class="track-title c-ai">CPO / 光模块</div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔗</span><span class="card-title">需求侧指标</span></div>
+      <div class="ind-item" data-indid="capex-global-cloud">
+        <div class="ind-name">全球云厂商AI CapEx</div>
+        <div class="ind-detail">
+          <div class="ind-logic">Meta/Google/微软/亚马逊季度资本开支指引，是光模块最核心领先指标。CapEx超预期→光模块订单景气</div>
+          <div class="ind-meta"><span class="tag-src">季报/财报电话会</span><span class="tag-freq">季度</span><span class="tag-bull">CapEx超预期→看多</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="nv-dc-rev">
+        <div class="ind-name">英伟达GPU出货量</div>
+        <div class="ind-detail">
+          <div class="ind-logic">H100/H200/B系列出货节奏，每颗高端GPU需配套多根高速光模块（400G/800G），出货加速→光模块超预期</div>
+          <div class="ind-meta"><span class="tag-src">英伟达财报/产业链调研</span><span class="tag-freq">季度</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="optical-800g-pct">
+        <div class="ind-name">800G/1.6T光模块渗透率</div>
+        <div class="ind-detail">
+          <div class="ind-logic">高速代际切换（400G→800G→1.6T）是量价齐升的核心，渗透率提升带动单价上涨，ASP×出货量双升</div>
+          <div class="ind-meta"><span class="tag-src">Lightcounting/产业链</span><span class="tag-freq">半年</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📦</span><span class="card-title">供给/库存指标</span></div>
+      <div class="ind-item" data-indid="optical-leadtime">
+        <div class="ind-name">光模块交货周期</div>
+        <div class="ind-detail">
+          <div class="ind-logic">交货周期拉长（≥26周）说明供需紧张，价格有支撑；收缩至12周以内警惕产能释放压价</div>
+          <div class="ind-meta"><span class="tag-src">产业链调研</span><span class="tag-freq">月</span><span class="tag-bull">周期拉长→涨价预期</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="optical-chip-local">
+        <div class="ind-name">国内光芯片自给率</div>
+        <div class="ind-detail">
+          <div class="ind-logic">CPO方向国产化率，光芯片是核心卡脖子，国产化突破带来估值重构</div>
+          <div class="ind-meta"><span class="tag-src">产业链调研/公司公告</span><span class="tag-freq">半年</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">💰</span><span class="card-title">财务验证指标</span></div>
+      <div class="ind-item" data-indid="txc-revyoy">
+        <div class="ind-name">中际旭创/天孚通信营收增速</div>
+        <div class="ind-detail">
+          <div class="ind-logic">头部公司季报营收/毛利率是板块景气验证，毛利率超30%说明产品定价权强</div>
+          <div class="ind-meta"><span class="tag-src">季报</span><span class="tag-freq">季度</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="txc-contract">
+        <div class="ind-name">在手订单/预收款</div>
+        <div class="ind-detail">
+          <div class="ind-logic">光模块公司在手订单变化是未来1-2个季度收入的领先指标</div>
+          <div class="ind-meta"><span class="tag-src">财报/投资者调研</span><span class="tag-freq">季度</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="track-title c-ai">液冷散热</div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🌡️</span><span class="card-title">需求驱动指标</span></div>
+      <div class="ind-item" data-indid="dc-pue">
+        <div class="ind-name">数据中心PUE要求</div>
+        <div class="ind-detail">
+          <div class="ind-logic">政策强制PUE≤1.3（工信部），促使新建数据中心从风冷切换至液冷，每台AI服务器功耗≥700W是风冷极限</div>
+          <div class="ind-meta"><span class="tag-src">工信部/发改委文件</span><span class="tag-freq">年</span><span class="tag-bull">PUE政策趋严→液冷加速</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="gpu-server-ship">
+        <div class="ind-name">高功率GPU服务器出货量</div>
+        <div class="ind-detail">
+          <div class="ind-logic">GB200等功耗≥1000W服务器单台必须配液冷，是液冷需求最直接指标</div>
+          <div class="ind-meta"><span class="tag-src">ODM厂商调研</span><span class="tag-freq">季度</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="cn-dc-plan">
+        <div class="ind-name">国内大厂数据中心建设规划</div>
+        <div class="ind-detail">
+          <div class="ind-logic">腾讯/阿里/华为/三大运营商的新建IDC规模和液冷采购比例</div>
+          <div class="ind-meta"><span class="tag-src">公司公告/产业调研</span><span class="tag-freq">季度</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔧</span><span class="card-title">技术渗透指标</span></div>
+      <div class="ind-item" data-indid="liquid-cool-pct">
+        <div class="ind-name">液冷渗透率（浸没/冷板）</div>
+        <div class="ind-detail">
+          <div class="ind-logic">2024年液冷渗透率约10-15%，预计2026年达30%+。冷板式先行，浸没式是长期方向</div>
+          <div class="ind-meta"><span class="tag-src">IDC研究/产业链</span><span class="tag-freq">半年</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="cdu-price">
+        <div class="ind-name">冷却液/CDU价格及毛利率</div>
+        <div class="ind-detail">
+          <div class="ind-logic">液冷系统核心是CDU（冷却分配单元），价格反映供需，毛利率反映竞争格局</div>
+          <div class="ind-meta"><span class="tag-src">申菱/英维克等公司公告</span><span class="tag-freq">季度</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📊</span><span class="card-title">公司/订单指标</span></div>
+      <div class="ind-item" data-indid="yingweike-order">
+        <div class="ind-name">英维克/申菱环境订单增速</div>
+        <div class="ind-detail">
+          <div class="ind-logic">头部液冷公司新签合同金额，半年报/年报的合同负债变化是景气最直接验证</div>
+          <div class="ind-meta"><span class="tag-src">半年报/年报</span><span class="tag-freq">半年</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="cool-bid-count">
+        <div class="ind-name">中标公告数量及单价</div>
+        <div class="ind-detail">
+          <div class="ind-logic">追踪中国政府采购网、运营商招标网站的液冷系统中标数据</div>
+          <div class="ind-meta"><span class="tag-src">政府采购网/招标网</span><span class="tag-freq">月</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="track-title c-ai">国产算力芯片 / 算力租赁</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🧠</span><span class="card-title">国产算力芯片指标</span></div>
+      <div class="ind-item" data-indid="cn-npu-ship">
+        <div class="ind-name">华为昇腾/寒武纪出货量</div>
+        <div class="ind-detail">
+          <div class="ind-logic">美国制裁下国产替代加速，出货量是最直接需求指标；对比英伟达H800/A800被禁后的市占率切换</div>
+          <div class="ind-meta"><span class="tag-src">公司调研/产业链</span><span class="tag-freq">半年</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="cn-gpu-price">
+        <div class="ind-name">国产GPU算力卡价格趋势</div>
+        <div class="ind-detail">
+          <div class="ind-logic">910B等国产卡与H100价差收窄，说明竞争力提升；供需紧张时溢价明显</div>
+          <div class="ind-meta"><span class="tag-src">产业链调研/公开报道</span><span class="tag-freq">月</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="llm-cluster">
+        <div class="ind-name">大模型训练集群需求</div>
+        <div class="ind-detail">
+          <div class="ind-logic">国内各互联网/AI公司大模型训练采购规模（字节/百度/阿里），直接拉动国产算力卡需求</div>
+          <div class="ind-meta"><span class="tag-src">公司公告/媒体报道</span><span class="tag-freq">不定期</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="export-ctrl">
+        <div class="ind-name">出口管制政策动态</div>
+        <div class="ind-detail">
+          <div class="ind-logic">美国对华芯片出口管制升级是国产化最强催化剂，每次管制加码→国产算力股脉冲式上涨</div>
+          <div class="ind-meta"><span class="tag-src">BIS/商务部公告</span><span class="tag-freq">不定期</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">☁️</span><span class="card-title">算力租赁指标</span></div>
+      <div class="ind-item" data-indid="gpu-cloud-price">
+        <div class="ind-name">GPU云服务器租赁单价</div>
+        <div class="ind-detail">
+          <div class="ind-logic">A100/H100/910B等GPU的云租赁价格（元/卡·时），价格上涨说明供不应求，算力租赁公司收入弹性大</div>
+          <div class="ind-meta"><span class="tag-src">云厂商官网/调研</span><span class="tag-freq">月</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="idc-utilization">
+        <div class="ind-name">IDC上架率/满架率</div>
+        <div class="ind-detail">
+          <div class="ind-logic">算力租赁公司IDC机柜上架率反映需求端饱和度，高上架率=定价能力强，业绩确定性高</div>
+          <div class="ind-meta"><span class="tag-src">公司调研</span><span class="tag-freq">季度</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="ai-app-hot">
+        <div class="ind-name">国内AI应用爆款频率</div>
+        <div class="ind-detail">
+          <div class="ind-logic">DeepSeek类爆款AI应用带来大规模推理算力需求，是算力租赁最直接催化剂</div>
+          <div class="ind-meta"><span class="tag-src">媒体/产业</span><span class="tag-freq">不定期</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 4: 半导体 ══════════ -->
+<div class="section" id="s3">
+  <div class="section-title">💾 <span>半导体</span> 全链条指标体系</div>
+  <div class="note">半导体是强周期行业，遵循"库存周期（1-2年）嵌套在产能周期（3-5年）"的双周期结构。库存去化是短期催化，产能扩张是中期驱动，新技术节点突破是长期价值重估。</div>
+  <div class="track-title c-semi">库存/产能周期（全行业基础判断）</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📦</span><span class="card-title">库存周期指标（1-2年维度）</span></div>
+      <div class="ind-item" data-indid="semi-inv-days">
+        <div class="ind-name">半导体行业库存天数</div>
+        <div class="ind-detail">
+          <div class="ind-logic">全行业库存/销售额，高于90天为去库，低于60天为补库阶段</div>
+          <div class="ind-meta"><span class="tag-src">各公司季报/Bloomberg</span><span class="tag-freq">季度</span><span class="tag-bull">库存低位→补库景气</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="fabless-inv">
+        <div class="ind-name">芯片设计公司渠道库存</div>
+        <div class="ind-detail">
+          <div class="ind-logic">台积电/中芯等代工厂的客户备货水位，超过12周渠道库存为高位</div>
+          <div class="ind-meta"><span class="tag-src">公司财报电话会</span><span class="tag-freq">季度</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="dram-spot">
+        <div class="ind-name">DRAM/NAND现货价格</div>
+        <div class="ind-detail">
+          <div class="ind-logic">存储是最敏感的价格指标，价格连续3个月上涨=景气拐点确认</div>
+          <div class="ind-meta"><span class="tag-src">DRAMeXchange/TrendForce</span><span class="tag-freq">周</span><span class="tag-bull">现货价连涨→积极</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🏭</span><span class="card-title">产能周期指标（3-5年维度）</span></div>
+      <div class="ind-item" data-indid="tsmc-utilization">
+        <div class="ind-name">晶圆厂产能利用率</div>
+        <div class="ind-detail">
+          <div class="ind-logic">台积电/中芯国际产能利用率，低于80%为去产能阶段，高于95%=满产涨价</div>
+          <div class="ind-meta"><span class="tag-src">公司季报</span><span class="tag-freq">季度</span><span class="tag-bull">>90%且上涨→景气高点</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="semi-equip-capex">
+        <div class="ind-name">全球晶圆厂设备支出（SEMI）</div>
+        <div class="ind-detail">
+          <div class="ind-logic">SEMI前瞻性数据，设备订单领先收入12-18个月，中国占比超25%持续扩张</div>
+          <div class="ind-meta"><span class="tag-src">SEMI.org</span><span class="tag-freq">季度</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="bfc-order">
+        <div class="ind-name">北方华创/中微公司设备订单</div>
+        <div class="ind-detail">
+          <div class="ind-logic">国内半导体设备龙头在手订单变化，合同负债增速是国产设备景气领先指标</div>
+          <div class="ind-meta"><span class="tag-src">季报</span><span class="tag-freq">季度</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="track-title c-semi">芯片设计 / 功率半导体</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🎨</span><span class="card-title">芯片设计</span><span class="card-badge" style="background:rgba(168,85,247,.2);color:var(--purple)">Fabless商业模式</span></div>
+      <div class="ind-item" data-indid="downstream-ship">
+        <div class="ind-name">下游应用出货量</div>
+        <div class="ind-detail">
+          <div class="ind-logic">手机/PC/汽车/AI服务器出货量直接决定芯片设计公司营收，是最关键需求指标</div>
+          <div class="ind-meta"><span class="tag-src">IDC/Canalys/乘联会</span><span class="tag-freq">月</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="wafer-leadtime">
+        <div class="ind-name">代工厂流片等待周期</div>
+        <div class="ind-detail">
+          <div class="ind-logic">流片周期缩短说明代工产能充裕、设计公司可加快产品迭代；拉长说明需求旺盛</div>
+          <div class="ind-meta"><span class="tag-src">产业链调研</span><span class="tag-freq">月</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="local-rate-semi">
+        <div class="ind-name">国产化率提升进度</div>
+        <div class="ind-detail">
+          <div class="ind-logic">AI芯片/SoC等关键赛道国产替代率，是国内芯片设计估值溢价的核心支撑</div>
+          <div class="ind-meta"><span class="tag-src">政策文件/调研</span><span class="tag-freq">年</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">⚡</span><span class="card-title">功率半导体（IGBT/SiC/MOSFET）</span><span class="card-badge" style="background:rgba(168,85,247,.2);color:var(--purple)">新能源核心受益</span></div>
+      <div class="ind-item" data-indid="nev-sales-yoy">
+        <div class="ind-name">新能源车销量+渗透率</div>
+        <div class="ind-detail">
+          <div class="ind-logic">每辆纯电车消耗IGBT约100颗，是功率器件最大需求来源；渗透率每提升1%带来约100亿元新增市场</div>
+          <div class="ind-meta"><span class="tag-src">乘联会</span><span class="tag-freq">月</span><span class="tag-bull">渗透率↑→功率半导体需求确定性强</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="solar-inst-yoy">
+        <div class="ind-name">光伏/风电装机量</div>
+        <div class="ind-detail">
+          <div class="ind-logic">逆变器是功率半导体最大非汽车应用，光伏装机量增速直接带动IGBT/MOSFET需求</div>
+          <div class="ind-meta"><span class="tag-src">国家能源局月报</span><span class="tag-freq">月</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="sic-price">
+        <div class="ind-name">SiC基板价格&良品率</div>
+        <div class="ind-detail">
+          <div class="ind-logic">SiC是功率半导体升级方向，基板价格下降是SiC渗透率提升的关键，良品率提升=国产SiC成本竞争力</div>
+          <div class="ind-meta"><span class="tag-src">产业链调研/公司公告</span><span class="tag-freq">半年</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="track-title c-semi">半导体材料 / MLCC被动元件</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">⚗️</span><span class="card-title">半导体材料</span></div>
+      <div class="ind-item" data-indid="photoresist-price">
+        <div class="ind-name">光刻胶/高纯试剂价格</div>
+        <div class="ind-detail">
+          <div class="ind-logic">半导体材料随晶圆厂扩产同步景气，价格稳定+出货量提升=量价齐升逻辑</div>
+          <div class="ind-meta"><span class="tag-src">公司公告/调研</span><span class="tag-freq">季度</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="wafer-local-rate">
+        <div class="ind-name">国内晶圆厂采购本地化率</div>
+        <div class="ind-detail">
+          <div class="ind-logic">中芯国际等从日本/美国材料供应商切换至国产，国产材料公司市占率提升=长期增量逻辑</div>
+          <div class="ind-meta"><span class="tag-src">公司调研/公告</span><span class="tag-freq">半年</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔋</span><span class="card-title">MLCC / 被动元件</span></div>
+      <div class="ind-item" data-indid="mlcc-jp-price">
+        <div class="ind-name">MLCC日系厂商报价</div>
+        <div class="ind-detail">
+          <div class="ind-logic">村田/TDK报价是全球被动元件定价基准，涨价周期来临时国内厂商同步受益</div>
+          <div class="ind-meta"><span class="tag-src">分销商报价/公开渠道</span><span class="tag-freq">月</span><span class="tag-bull">日系报价↑→国内厂跟涨</span></div>
+        </div>
+      </div>
+      <div class="ind-item" data-indid="mlcc-per-unit">
+        <div class="ind-name">手机/汽车MLCC单机用量</div>
+        <div class="ind-detail">
+          <div class="ind-logic">5G手机约1000颗MLCC，新能源车约1.5万颗，用量升级持续拉动需求增长</div>
+          <div class="ind-meta"><span class="tag-src">产业研究</span><span class="tag-freq">年</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 5: 通信/光通信 ══════════ -->
+<div class="section" id="s4">
+  <div class="section-title">📡 <span>通信/光通信</span> 指标观测体系</div>
+  <div class="note">通信行业的商业逻辑是：资本开支（CapEx）驱动。运营商/互联网大厂的投资计划直接传导至设备/器件/光纤采购。射频前端是手机端需求，光纤光缆是基础设施需求，两者驱动因子不同。</div>
+  <div class="track-title c-comm">光纤光缆</div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📋</span><span class="card-title">招标/采购指标</span></div>
+      <div class="ind-item" data-indid="optic-cable-bid"><div class="ind-name">三大运营商光缆招标量</div><div class="ind-detail"><div class="ind-logic">全年最重要的景气指标，中移动/联通/电信年度光缆集采总量，超预期则板块大涨</div><div class="ind-meta"><span class="tag-src">中标信息/招标网</span><span class="tag-freq">年（Q1-Q2集中）</span><span class="tag-bull">超预期→景气确认</span></div></div></div>
+      <div class="ind-item" data-indid="optic-cable-price"><div class="ind-name">光缆中标均价</div><div class="ind-detail"><div class="ind-logic">量价关系：中标价格持续下降压制毛利率，价格企稳回升是盈利修复信号</div><div class="ind-meta"><span class="tag-src">中标公告</span><span class="tag-freq">季度</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🌏</span><span class="card-title">出口/国际化指标</span></div>
+      <div class="ind-item" data-indid="cable-export"><div class="ind-name">光缆出口额（中国海关）</div><div class="ind-detail"><div class="ind-logic">中国光缆出口占全球40%+，出口额高增长说明全球基础设施建设需求旺，长飞/亨通核心受益</div><div class="ind-meta"><span class="tag-src">中国海关/Wind</span><span class="tag-freq">月</span></div></div></div>
+      <div class="ind-item" data-indid="submarine-cable"><div class="ind-name">国际海缆项目中标</div><div class="ind-detail"><div class="ind-logic">海缆单项目金额数十亿，中标公告是华海通信等公司股价催化剂</div><div class="ind-meta"><span class="tag-src">公司公告/行业媒体</span><span class="tag-freq">不定期</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🧮</span><span class="card-title">材料成本指标</span></div>
+      <div class="ind-item" data-indid="fiber-preform-price"><div class="ind-name">光纤预制棒/光纤价格</div><div class="ind-detail"><div class="ind-logic">光纤光缆行业上游是预制棒，占成本约40%。预制棒价格下降→毛利率扩张</div><div class="ind-meta"><span class="tag-src">产业链调研</span><span class="tag-freq">月</span></div></div></div>
+      <div class="ind-item" data-indid="fiber-competition"><div class="ind-name">光纤光缆竞争格局</div><div class="ind-detail"><div class="ind-logic">CR3长飞/中天/亨通合计市占约60%，低于此集中度说明价格战风险上升</div><div class="ind-meta"><span class="tag-src">招标数据/行业报告</span><span class="tag-freq">年</span></div></div></div>
+    </div>
+  </div>
+  <div class="track-title c-comm">射频前端（SAW/BAW/PA）</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📱</span><span class="card-title">需求端指标</span></div>
+      <div class="ind-item" data-indid="smartphone-global"><div class="ind-name">智能手机出货量（全球/中国）</div><div class="ind-detail"><div class="ind-logic">射频前端=手机必需组件，5G手机单机射频价值量约12-15美元（4G约5美元），出货量×升级率=需求</div><div class="ind-meta"><span class="tag-src">IDC/Canalys</span><span class="tag-freq">月/季</span><span class="tag-bull">出货量复苏+5G渗透↑→双重受益</span></div></div></div>
+      <div class="ind-item" data-indid="phone-5g-pct"><div class="ind-name">5G手机渗透率</div><div class="ind-detail"><div class="ind-logic">中国5G手机渗透率已超80%，核心看海外5G渗透提升（印度/东南亚/中东）带来的全球需求增量</div><div class="ind-meta"><span class="tag-src">IDC/GSMA</span><span class="tag-freq">季度</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🏆</span><span class="card-title">竞争格局指标</span></div>
+      <div class="ind-item" data-indid="rf-guidance"><div class="ind-name">Qorvo/Skyworks收入指引</div><div class="ind-detail"><div class="ind-logic">全球射频前端寡头，其季度收入指引是行业景气最佳领先指标；下调指引→全球手机需求偏弱</div><div class="ind-meta"><span class="tag-src">美股季报</span><span class="tag-freq">季度</span></div></div></div>
+      <div class="ind-item" data-indid="zhuosheng-share"><div class="ind-name">卓胜微国内份额提升</div><div class="ind-detail"><div class="ind-logic">国内射频前端国产化率仅约15-20%，卓胜微持续突破高端SAW/BAW，替代进口是长期逻辑</div><div class="ind-meta"><span class="tag-src">公司公告/调研</span><span class="tag-freq">半年</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 6: 软件/IT服务 ══════════ -->
+<div class="section" id="s5">
+  <div class="section-title">💻 <span>软件/IT服务</span> 指标观测体系</div>
+  <div class="note">软件行业的商业逻辑是：ToB的政府/企业IT预算驱动，高度依赖客户数字化投入意愿，弱宏观周期但强政策周期。收入确认具有显著Q4集中性，合同负债是领先的景气验证指标。</div>
+  <div class="track-title c-sw">IT服务 / 行业应用软件</div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🏛️</span><span class="card-title">政府端指标</span></div>
+      <div class="ind-item"><div class="ind-name">全国信息化建设财政预算</div><div class="ind-detail"><div class="ind-logic">每年3月两会预算报告，"数字政府"专项拨款规模是政务IT公司订单的最直接前瞻指标</div><div class="ind-meta"><span class="tag-src">财政部预算报告</span><span class="tag-freq">年（Q1）</span><span class="tag-bull">预算增速>15%→政务IT高景气</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">政府IT集中采购清单</div><div class="ind-detail"><div class="ind-logic">信创党政军采购清单中国产软硬件比例，季度集中招标节奏预判收入确认时间</div><div class="ind-meta"><span class="tag-src">政府采购网</span><span class="tag-freq">月</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">数字经济专项政策落地</div><div class="ind-detail"><div class="ind-logic">省级数字政府/数字经济专项文件落地节奏，直接带动地方政务IT采购</div><div class="ind-meta"><span class="tag-src">政策数据库</span><span class="tag-freq">不定期</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🏦</span><span class="card-title">行业客户景气指标</span></div>
+      <div class="ind-item"><div class="ind-name">银行科技投入占比</div><div class="ind-detail"><div class="ind-logic">工农中建四大行年报中的科技投入/营业收入比，是金融IT景气核心指标，历年稳步提升</div><div class="ind-meta"><span class="tag-src">银行年报</span><span class="tag-freq">年（Q1）</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">医院信息化投入</div><div class="ind-detail"><div class="ind-logic">国家卫健委医院信息化建设要求，DRG/DIP等医保改革倒逼医院IT升级，医疗IT公司受益</div><div class="ind-meta"><span class="tag-src">卫健委政策/公司调研</span><span class="tag-freq">半年</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">工业互联网/制造业IT渗透</div><div class="ind-detail"><div class="ind-logic">工信部工业互联网发展报告，制造业IT化滞后，渗透率提升空间大，MES/ERP需求持续</div><div class="ind-meta"><span class="tag-src">工信部报告</span><span class="tag-freq">年</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📊</span><span class="card-title">财务景气验证</span></div>
+      <div class="ind-item"><div class="ind-name">合同负债+预收账款增速</div><div class="ind-detail"><div class="ind-logic">软件公司合同负债=未来已锁定收入，增速加快是未来1-2个季度收入加速的领先指标</div><div class="ind-meta"><span class="tag-src">季报资产负债表</span><span class="tag-freq">季度</span><span class="tag-bull">合同负债YoY>20%→确定性高</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">Q4收入占全年比例</div><div class="ind-detail"><div class="ind-logic">政务IT公司Q4验收集中，通常占全年40-50%收入，Q3合同负债高=Q4业绩确定性强</div><div class="ind-meta"><span class="tag-src">年报/季报对比</span><span class="tag-freq">季度</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">人力成本占比/人效</div><div class="ind-detail"><div class="ind-logic">IT服务是劳动密集型，人均创收增长=产品化/标准化程度提升，是盈利能力改善信号</div><div class="ind-meta"><span class="tag-src">年报</span><span class="tag-freq">年</span></div></div></div>
+    </div>
+  </div>
+  <div class="track-title c-sw">信创 / 安防</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🇨🇳</span><span class="card-title">信创指标</span></div>
+      <div class="ind-item"><div class="ind-name">党政军信创替换进度</div><div class="ind-detail"><div class="ind-logic">参考信创路线图：2022-2024党政军、2025-2027金融/电信/能源。替换进度=市场空间释放速度</div><div class="ind-meta"><span class="tag-src">政策文件/公司调研</span><span class="tag-freq">半年</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">国产CPU/OS出货量</div><div class="ind-detail"><div class="ind-logic">飞腾/龙芯CPU+麒麟/统信OS出货是信创最硬的数据，每季度出货量增速</div><div class="ind-meta"><span class="tag-src">公司公告/IDC</span><span class="tag-freq">季度</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔒</span><span class="card-title">安防指标</span></div>
+      <div class="ind-item"><div class="ind-name">平安城市/雪亮工程投资额</div><div class="ind-detail"><div class="ind-logic">政府安防招标总额（政府采购网），AI+安防渗透率提升带动海康/大华等硬件+软件双轮驱动</div><div class="ind-meta"><span class="tag-src">政府采购网/公司公告</span><span class="tag-freq">季度</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">出口受限影响评估</div><div class="ind-detail"><div class="ind-logic">海康/大华受美国制裁影响，海外收入占比是风险指标；国内替代需求是补偿逻辑</div><div class="ind-meta"><span class="tag-src">公司年报</span><span class="tag-freq">年</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 7: 消费电子 ══════════ -->
+<div class="section" id="s6">
+  <div class="section-title">📱 <span>消费电子</span> 指标观测体系</div>
+  <div class="note">消费电子是最典型的终端需求驱动型行业：品牌机（苹果/华为/小米）出货量→供应链订单→各零部件/代工厂景气。Apple业绩指引是全球消费电子最权威的领先指标。</div>
+  <div class="track-title c-ce">整机出货（终端需求）</div>
+  <div class="grid grid-4">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📱</span><span class="card-title">智能手机</span></div>
+      <div class="ind-item" data-indid="smartphone-global"><div class="ind-name">全球手机出货量（IDC）</div><div class="ind-detail"><div class="ind-logic">季度同比增速连续两季度正增长=复苏确认，中国市场领先全球约1个季度</div><div class="ind-meta"><span class="tag-src">IDC/Canalys</span><span class="tag-freq">季度</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">苹果iPhone出货量指引</div><div class="ind-detail"><div class="ind-logic">苹果财报季度收入指引，对A股苹果供应链（歌尔/立讯/蓝思等）有直接传导</div><div class="ind-meta"><span class="tag-src">苹果财报</span><span class="tag-freq">季度</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">💻</span><span class="card-title">PC/平板</span></div>
+      <div class="ind-item"><div class="ind-name">全球PC出货量（IDC）</div><div class="ind-detail"><div class="ind-logic">AI PC换机周期启动（2025-2026），每台AI PC需NPU芯片+内存升级，带动供应链量价双升</div><div class="ind-meta"><span class="tag-src">IDC</span><span class="tag-freq">季度</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">👓</span><span class="card-title">XR/可穿戴</span></div>
+      <div class="ind-item"><div class="ind-name">AppleVisionPro/Meta Quest出货</div><div class="ind-detail"><div class="ind-logic">XR是消费电子下一个大品类，出货量爬坡节奏决定光学/微显示/声学器件的景气拐点</div><div class="ind-meta"><span class="tag-src">IDC/公司调研</span><span class="tag-freq">季度</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🤖</span><span class="card-title">AI终端设备</span></div>
+      <div class="ind-item"><div class="ind-name">AI手机/AI PC渗透率</div><div class="ind-detail"><div class="ind-logic">AI终端带动内存/存储/摄像头升级，单机价值量提升+出货量温和增长=供应链量价双升</div><div class="ind-meta"><span class="tag-src">IDC/各大厂商</span><span class="tag-freq">季度</span></div></div></div>
+    </div>
+  </div>
+  <div class="track-title c-ce">供应链核心零部件</div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔌</span><span class="card-title">连接器/结构件</span></div>
+      <div class="ind-item"><div class="ind-name">立讯精密/歌尔股份营收增速</div><div class="ind-detail"><div class="ind-logic">消费电子EMS龙头是苹果供应链晴雨表，营收加速=苹果订单饱满</div><div class="ind-meta"><span class="tag-src">季报</span><span class="tag-freq">季度</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">铝合金/不锈钢等原材料价格</div><div class="ind-detail"><div class="ind-logic">金属结构件成本敏感，铜/铝价格直接影响毛利率</div><div class="ind-meta"><span class="tag-src">LME/上期所</span><span class="tag-freq">日</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔊</span><span class="card-title">声学器件</span></div>
+      <div class="ind-item"><div class="ind-name">TWS耳机全球出货量</div><div class="ind-detail"><div class="ind-logic">TWS是声学器件最大下游，全球年出货约5亿副，ANC（主动降噪）渗透率提升带动单价上升</div><div class="ind-meta"><span class="tag-src">IDC/Counterpoint</span><span class="tag-freq">季度</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🎮</span><span class="card-title">智能控制器</span></div>
+      <div class="ind-item"><div class="ind-name">智能家居/扫地机出货量</div><div class="ind-detail"><div class="ind-logic">拓邦/和而泰等智能控制器需求跟踪白色家电/扫地机器人/电动工具出货量，外销占比高需关注汇率</div><div class="ind-meta"><span class="tag-src">海关数据/行业报告</span><span class="tag-freq">月</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 8: 显示/LED/PCB ══════════ -->
+<div class="section" id="s7">
+  <div class="section-title">🖥️ <span>显示/LED/PCB</span> 指标观测体系</div>
+  <div class="track-title c-disp">显示面板</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📺</span><span class="card-title">面板价格指标</span></div>
+      <div class="ind-item" data-indid="panel-tv32"><div class="ind-name">Omdia面板月度价格</div><div class="ind-detail"><div class="ind-logic">32吋/55吋TV面板均价是全行业景气最直接指标，连续3个月上涨=景气向上拐点，A股面板股弹性极大</div><div class="ind-meta"><span class="tag-src">Omdia/WitsView</span><span class="tag-freq">月</span><span class="tag-bull">价格连涨3个月→强做多信号</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">京东方/TCL华星产能利用率</div><div class="ind-detail"><div class="ind-logic">面板厂产能利用率低于75%=主动减产去库，低位是配置时机；高于90%=供需紧张涨价</div><div class="ind-meta"><span class="tag-src">公司季报/调研</span><span class="tag-freq">季度</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">TV品牌备货周期</div><div class="ind-detail"><div class="ind-logic">品牌商（三星/LG/TCL/海信）备货节奏领先面板价格1-2个月，备货量增加→价格反弹</div><div class="ind-meta"><span class="tag-src">供应链调研</span><span class="tag-freq">月</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📱</span><span class="card-title">OLED/柔性面板指标</span></div>
+      <div class="ind-item"><div class="ind-name">OLED面板出货量（手机+IT）</div><div class="ind-detail"><div class="ind-logic">OLED渗透率从手机→平板→笔电→车载，国内厂商（京东方）逐步切入苹果供应链，每个切入节点是重大催化</div><div class="ind-meta"><span class="tag-src">DSCC/Omdia</span><span class="tag-freq">季度</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">苹果OLED供应商份额</div><div class="ind-detail"><div class="ind-logic">苹果iPhone OLED国内供应商从0提升到30%+，是京东方/维信诺最核心的催化事件</div><div class="ind-meta"><span class="tag-src">产业链调研/媒体</span><span class="tag-freq">不定期</span></div></div></div>
+    </div>
+  </div>
+  <div class="track-title c-disp">LED</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">💡</span><span class="card-title">LED景气指标</span></div>
+      <div class="ind-item"><div class="ind-name">Mini/Micro LED渗透率</div><div class="ind-detail"><div class="ind-logic">LED行业升级方向，Mini LED背光已进入主流TV/显示器，Micro LED是下一代，单位面积价值量↑</div><div class="ind-meta"><span class="tag-src">Omdia/LEDinside</span><span class="tag-freq">季度</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">LED芯片ASP（平均售价）</div><div class="ind-detail"><div class="ind-logic">LED属于高度同质化竞争，ASP下降=价格战，上升=景气回暖。持续高位=供不应求</div><div class="ind-meta"><span class="tag-src">LEDinside</span><span class="tag-freq">季度</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🌱</span><span class="card-title">植物照明/户外显示</span></div>
+      <div class="ind-item"><div class="ind-name">户外大屏/小间距屏需求</div><div class="ind-detail"><div class="ind-logic">商业显示（广告牌/会议室）是LED最大增量应用，出海市场尤其东南亚/中东增速快</div><div class="ind-meta"><span class="tag-src">公司调研/行业报告</span><span class="tag-freq">半年</span></div></div></div>
+    </div>
+  </div>
+  <div class="track-title c-pcb">PCB / AI PCB / CCL</div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔲</span><span class="card-title">PCB景气指标</span></div>
+      <div class="ind-item"><div class="ind-name">台湾PCB厂营收月报</div><div class="ind-detail"><div class="ind-logic">台湾PCB厂（欣兴/臻鼎/耀华）月营收同比是中国PCB厂景气的同步指标，领先A股约1个月</div><div class="ind-meta"><span class="tag-src">台湾交易所月报</span><span class="tag-freq">月</span><span class="tag-bull">台湾厂营收↑→A股跟随</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">AI服务器用高层板需求</div><div class="ind-detail"><div class="ind-logic">AI服务器主板需≥16层高多层PCB，单价约5-10倍于普通PCB，AI算力扩张直接拉动AI PCB需求</div><div class="ind-meta"><span class="tag-src">产业链调研</span><span class="tag-freq">季度</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🧱</span><span class="card-title">CCL（覆铜板）指标</span></div>
+      <div class="ind-item"><div class="ind-name">覆铜板价格趋势</div><div class="ind-detail"><div class="ind-logic">覆铜板是PCB上游材料（占成本约30%），CCL价格上涨→PCB涨价传导，需关注铜价+树脂价格</div><div class="ind-meta"><span class="tag-src">行业协会/公司调研</span><span class="tag-freq">月</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">高频高速CCL渗透率</div><div class="ind-detail"><div class="ind-logic">5G/AI应用要求高频高速材料，生益科技/华正新材高端CCL份额提升=价值量升级</div><div class="ind-meta"><span class="tag-src">公司调研</span><span class="tag-freq">半年</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🏭</span><span class="card-title">HVLP铜箔 / 玻璃基板</span></div>
+      <div class="ind-item"><div class="ind-name">铜箔价格（电解铜箔）</div><div class="ind-detail"><div class="ind-logic">PCB和锂电两大需求来源拉动铜箔，高频高速PCB需HVLP铜箔，毛面粗糙度是核心技术壁垒</div><div class="ind-meta"><span class="tag-src">LME+加工费</span><span class="tag-freq">月</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">玻璃基板技术进展</div><div class="ind-detail"><div class="ind-logic">英特尔/三星玻璃基板封装商业化节奏，是下一代先进封装材料，国内2026-2028年产业化窗口期</div><div class="ind-meta"><span class="tag-src">公司公告/行业会议</span><span class="tag-freq">不定期</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 9: 设备/自动化 ══════════ -->
+<div class="section" id="s8">
+  <div class="section-title">⚙️ <span>设备/自动化</span> 指标观测体系</div>
+  <div class="note">设备/自动化行业受制造业固定资产投资景气驱动，分为服务传统制造的通用设备与专用设备，以及服务高端制造的工业机器人、激光设备、精密仪器。后者与下游新能源/汽车/半导体的景气强相关。</div>
+  <div class="track-title c-equip">工控自动化 / 工业机器人</div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🏭</span><span class="card-title">制造业景气指标</span></div>
+      <div class="ind-item"><div class="ind-name">制造业PMI（新订单分项）</div><div class="ind-detail"><div class="ind-logic">PMI新订单>50连续3个月→制造业扩产，工控/机器人景气领先指标，相关度极高</div><div class="ind-meta"><span class="tag-src">国家统计局</span><span class="tag-freq">月</span><span class="tag-bull">新订单连续>51→工控买入</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">工业企业固定资产投资</div><div class="ind-detail"><div class="ind-logic">制造业固定资产投资完成额同比，直接对应自动化设备采购意愿</div><div class="ind-meta"><span class="tag-src">国家统计局</span><span class="tag-freq">月</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🤖</span><span class="card-title">工业机器人指标</span></div>
+      <div class="ind-item"><div class="ind-name">工业机器人月度产量</div><div class="ind-detail"><div class="ind-logic">国家统计局工业机器人产量，中国已是全球最大市场，新能源/锂电/汽车是最大应用场景</div><div class="ind-meta"><span class="tag-src">国家统计局</span><span class="tag-freq">月</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">FANUC/ABB机器人订单</div><div class="ind-detail"><div class="ind-logic">全球机器人四大家族季报，订单量是全球制造业自动化景气的最佳领先指标</div><div class="ind-meta"><span class="tag-src">日本/瑞士财报</span><span class="tag-freq">季度</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">汇川技术/伺服驱动器出货量</div><div class="ind-detail"><div class="ind-logic">伺服驱动器是工业自动化核心零部件，汇川技术市占率代表国产替代进度</div><div class="ind-meta"><span class="tag-src">公司季报</span><span class="tag-freq">季度</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">⚡</span><span class="card-title">激光设备</span></div>
+      <div class="ind-item"><div class="ind-name">光纤激光器出货量</div><div class="ind-detail"><div class="ind-logic">IPG全球激光器龙头季报是激光行业景气最佳领先指标；国内锐科/创鑫持续替代进口</div><div class="ind-meta"><span class="tag-src">IPG季报</span><span class="tag-freq">季度</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">锂电/光伏激光工艺渗透</div><div class="ind-detail"><div class="ind-logic">锂电极片激光切割/光伏激光SE工艺，新能源扩产直接带动激光设备需求</div><div class="ind-meta"><span class="tag-src">调研</span><span class="tag-freq">半年</span></div></div></div>
+    </div>
+  </div>
+  <div class="track-title c-equip">精密仪器/传感器 / 数控机床</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🔬</span><span class="card-title">精密仪器/传感器</span></div>
+      <div class="ind-item"><div class="ind-name">汽车传感器需求（智能化）</div><div class="ind-detail"><div class="ind-logic">L2+智能驾驶渗透率提升，每台高阶智驾车需激光雷达/摄像头/IMU等传感器套件，量价双升</div><div class="ind-meta"><span class="tag-src">乘联会/Yole</span><span class="tag-freq">月/季</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">半导体检测设备国产化</div><div class="ind-detail"><div class="ind-logic">晶圆检测/量测是半导体最卡脖子的设备之一，国产化率低于10%，突破节点=重大催化</div><div class="ind-meta"><span class="tag-src">公司公告/调研</span><span class="tag-freq">不定期</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">⚙️</span><span class="card-title">数控机床</span></div>
+      <div class="ind-item"><div class="ind-name">金属切削机床产量</div><div class="ind-detail"><div class="ind-logic">国家统计局金属切削机床产量，汽车/航空制造是最大下游，高端数控机床国产化是政策重点</div><div class="ind-meta"><span class="tag-src">国家统计局</span><span class="tag-freq">月</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">日本机床订单额（JMTBA）</div><div class="ind-detail"><div class="ind-logic">日本机床协会月度订单额，领先中国机床行业约3-6个月，全球景气传导指标</div><div class="ind-meta"><span class="tag-src">JMTBA官网</span><span class="tag-freq">月</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 10: 新兴主题 ══════════ -->
+<div class="section" id="s9">
+  <div class="section-title">🚀 <span>新兴主题</span> 指标观测体系</div>
+  <div class="note">新兴主题赛道处于产业早期，估值受事件驱动影响大，基本面指标相对滞后，重点跟踪产业进展里程碑、政策催化和大厂订单节奏。景气判断更多依赖产业调研而非财务数据。</div>
+  <div class="track-title c-theme">人形机器人</div>
+  <div class="grid grid-3">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🤖</span><span class="card-title">整机量产进度</span></div>
+      <div class="ind-item"><div class="ind-name">特斯拉Optimus量产节奏</div><div class="ind-detail"><div class="ind-logic">特斯拉是人形机器人产业化最重要的催化剂，每次发布会/量产里程碑=板块估值重构机会</div><div class="ind-meta"><span class="tag-src">特斯拉财报/发布会</span><span class="tag-freq">季度</span><span class="tag-bull">量产加速→谐波/丝杠/传感器供应链受益</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">国内人形机器人量产交付</div><div class="ind-detail"><div class="ind-logic">优必选/宇树/智元等国内厂商交付数量和客户名单，工厂场景落地是最重要验证</div><div class="ind-meta"><span class="tag-src">公司公告/媒体报道</span><span class="tag-freq">不定期</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">⚙️</span><span class="card-title">关键零部件价格/产能</span></div>
+      <div class="ind-item"><div class="ind-name">谐波减速器产量&良品率</div><div class="ind-detail"><div class="ind-logic">谐波减速器是关节核心，绿的谐波等国产厂商产能扩张进度=产业化速度最硬指标</div><div class="ind-meta"><span class="tag-src">公司调研</span><span class="tag-freq">半年</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">滚柱丝杠/行星滚柱丝杠产能</div><div class="ind-detail"><div class="ind-logic">线性驱动关键零件，全球产能高度集中在日本（THK/NSK），国产化突破节点是重大催化</div><div class="ind-meta"><span class="tag-src">公司公告/调研</span><span class="tag-freq">半年</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">六维力矩传感器国产化进展</div><div class="ind-detail"><div class="ind-logic">触觉传感器是人形机器人精细操作的核心卡脖子，国产化率不足5%，突破=高弹性机会</div><div class="ind-meta"><span class="tag-src">公司调研/展会</span><span class="tag-freq">不定期</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">💰</span><span class="card-title">政策&投融资指标</span></div>
+      <div class="ind-item"><div class="ind-name">工信部人形机器人政策</div><div class="ind-detail"><div class="ind-logic">工信部《人形机器人创新发展指导意见》目标2025年量产、2027年规模化，政策节点=估值催化</div><div class="ind-meta"><span class="tag-src">工信部官网</span><span class="tag-freq">不定期</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">一级市场融资规模</div><div class="ind-detail"><div class="ind-logic">人形机器人一级市场融资节奏（金额/估值/投资方），是市场情绪的领先指标</div><div class="ind-meta"><span class="tag-src">IT桔子/烯牛数据</span><span class="tag-freq">月</span></div></div></div>
+    </div>
+  </div>
+  <div class="track-title c-theme">商业航天</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🛸</span><span class="card-title">发射&卫星进度</span></div>
+      <div class="ind-item"><div class="ind-name">国内商业火箭发射次数</div><div class="ind-detail"><div class="ind-logic">蓝箭/中科宇航/星际荣耀等商业火箭年度发射计划完成率，发射成功=里程碑事件=估值催化</div><div class="ind-meta"><span class="tag-src">公司公告/航天媒体</span><span class="tag-freq">不定期</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">卫星互联网星座进度</div><div class="ind-detail"><div class="ind-logic">G60/GW等国内卫星星座批复+组网节奏，Starlink竞争压力和国产替代空间的核心变量</div><div class="ind-meta"><span class="tag-src">主管部门/公司公告</span><span class="tag-freq">不定期</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">可重复使用火箭进展</div><div class="ind-detail"><div class="ind-logic">可回收复用是降低发射成本的核心，每次成功回收=商业航天景气最强催化，朱雀三号/天龙三号等</div><div class="ind-meta"><span class="tag-src">公司发布会/媒体</span><span class="tag-freq">不定期</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">📡</span><span class="card-title">卫星应用端</span></div>
+      <div class="ind-item"><div class="ind-name">卫星通信用户数/ARPU</div><div class="ind-detail"><div class="ind-logic">商业航天价值最终在应用端变现，卫星互联网用户数和ARPU是长期盈利验证</div><div class="ind-meta"><span class="tag-src">运营商/调研</span><span class="tag-freq">年</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">航天专项政策/军品订单</div><div class="ind-detail"><div class="ind-logic">军民融合政策下军品订单是商业航天公司重要收入来源，军品收入占比高=业绩确定性强</div><div class="ind-meta"><span class="tag-src">公司年报</span><span class="tag-freq">年</span></div></div></div>
+    </div>
+  </div>
+  <div class="track-title c-theme">可控核聚变 / 聚苯醚PPO/PPE</div>
+  <div class="grid grid-2">
+    <div class="card">
+      <div class="card-header"><span class="card-icon">☀️</span><span class="card-title">可控核聚变（主题驱动）</span></div>
+      <div class="ind-item"><div class="ind-name">ITER项目进展</div><div class="ind-detail"><div class="ind-logic">国际热核实验堆项目里程碑，中国贡献份额约9%，项目推进=国内超导/真空/热管理设备厂商受益</div><div class="ind-meta"><span class="tag-src">ITER官网/科技部</span><span class="tag-freq">不定期</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">私人核聚变公司融资</div><div class="ind-detail"><div class="ind-logic">美国Commonwealth Fusion/Helion等私人核聚变公司融资进展，是全球核聚变产业化的风向标</div><div class="ind-meta"><span class="tag-src">媒体/Crunchbase</span><span class="tag-freq">不定期</span></div></div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-icon">🧪</span><span class="card-title">聚苯醚PPO/PPE（AI硬件材料）</span></div>
+      <div class="ind-item"><div class="ind-name">高频覆铜板市场规模</div><div class="ind-detail"><div class="ind-logic">PPO/PPE是5G/AI高频PCB的核心绝缘材料，AI服务器高频PCB渗透率提升直接拉动需求，国产替代率低</div><div class="ind-meta"><span class="tag-src">行业报告/公司调研</span><span class="tag-freq">半年</span></div></div></div>
+      <div class="ind-item"><div class="ind-name">圣泉/宏昌PPO产能扩张</div><div class="ind-detail"><div class="ind-logic">国内PPO供应基本依赖旭化成（日本），圣泉集团等国产化突破是最强催化，产能利用率是景气指标</div><div class="ind-meta"><span class="tag-src">公司公告/调研</span><span class="tag-freq">半年</span></div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ TAB 11: 数据源汇总 ══════════ -->
+<div class="section" id="s10">
+  <div class="section-title">📋 <span>数据来源</span> 可得性清单</div>
+  <div class="note">经逐一核查，按免费程度分三级。✅ 完全免费可直达；⚠️ 摘要/新闻稿免费、完整数据需付费或注册；❌ 无公开免费渠道，需商业数据库或产业调研。</div>
+  <div class="avail-tier">
+    <div class="avail-tier-title t-free">✅ 完全免费、直接可用（18个数据源）</div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="avail-table">
+        <thead><tr><th style="width:18%">数据源</th><th style="width:32%">覆盖指标</th><th style="width:36%">网址</th><th style="width:7%">频率</th><th style="width:7%">状态</th></tr></thead>
+        <tbody>
+          <tr><td class="name-col">英伟达 IR</td><td>数据中心收入+CapEx指引；算力链最核心景气指标</td><td><a class="src-link" href="https://investor.nvidia.com/financial-information/quarterly-results" target="_blank">investor.nvidia.com</a></td><td><span class="tag-freq">季</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">苹果 IR</td><td>iPhone收入/指引；消费电子供应链景气</td><td><a class="src-link" href="https://investor.apple.com/sec-filings/annual-reports" target="_blank">investor.apple.com</a></td><td><span class="tag-freq">季</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">Meta/Alphabet/微软/亚马逊 IR</td><td>AI CapEx指引（光模块/液冷）；广告收入增速；云收入</td><td><a class="src-link" href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&type=10-Q" target="_blank">sec.gov · EDGAR</a></td><td><span class="tag-freq">季</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">台积电 IR</td><td>产能利用率、先进制程营收占比、N2/N3需求指引；月营收</td><td><a class="src-link" href="https://ir.tsmc.com/english/annualReports" target="_blank">ir.tsmc.com</a></td><td><span class="tag-freq">季+月</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">Qorvo / Skyworks IR</td><td>射频前端行业景气；手机需求前瞻指引</td><td><a class="src-link" href="https://ir.qorvo.com/" target="_blank">ir.qorvo.com</a></td><td><span class="tag-freq">季</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">IPG Photonics IR</td><td>全球光纤激光器行业景气；国产替代参考</td><td><a class="src-link" href="https://www.ipgphotonics.com/en/investors" target="_blank">ipgphotonics.com</a></td><td><span class="tag-freq">季</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">JMTBA 日本机床协会</td><td>日本机床月度订单额；领先中国机床行业3-6个月</td><td><a class="src-link" href="https://www.jmtba.or.jp/english/statistics/machine-tool-orders/" target="_blank">jmtba.or.jp</a></td><td><span class="tag-freq">月</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">SIA 半导体协会</td><td>全球月度半导体销售额同比；中国区分项</td><td><a class="src-link" href="https://www.semiconductors.org/sia-unit-sales-dashboard/" target="_blank">semiconductors.org</a></td><td><span class="tag-freq">月（滞后2月）</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">台湾证交所 MOPS 月营收</td><td>台湾PCB/光模块/半导体厂月营收同比；A股同类公司同步指标</td><td><a class="src-link" href="https://mops.twse.com.tw/mops/web/index" target="_blank">mops.twse.com.tw</a></td><td><span class="tag-freq">月（10日内）</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">国家统计局</td><td>PMI新订单、工业机器人产量、制造业固投、机床产量</td><td><a class="src-link" href="https://data.stats.gov.cn/" target="_blank">data.stats.gov.cn</a></td><td><span class="tag-freq">月</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">工信部</td><td>5G基站总量、软件业务收入、工业互联网发展指数</td><td><a class="src-link" href="https://www.miit.gov.cn/" target="_blank">miit.gov.cn</a></td><td><span class="tag-freq">月</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">中国海关统计</td><td>光缆出口额、芯片进口量/金额、电子元器件进出口</td><td><a class="src-link" href="http://stats.customs.gov.cn/" target="_blank">stats.customs.gov.cn</a></td><td><span class="tag-freq">月</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">政府采购网</td><td>IT集采、信创、安防、液冷招标（全国党政军采购）</td><td><a class="src-link" href="http://search.ccgp.gov.cn/" target="_blank">ccgp.gov.cn</a></td><td><span class="tag-freq">实时</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">中国移动采购招标网</td><td>光缆/光模块集采量+中标均价；运营商CapEx最直接验证</td><td><a class="src-link" href="https://b2b.10086.cn/" target="_blank">b2b.10086.cn</a></td><td><span class="tag-freq">不定期</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">中国汽车工业协会 CAAM</td><td>新能源车月度销量；功率半导体/激光/传感器下游需求</td><td><a class="src-link" href="http://www.caam.org.cn/" target="_blank">caam.org.cn</a></td><td><span class="tag-freq">月</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">国家能源局</td><td>光伏/风电月度装机量；功率半导体/逆变器下游需求</td><td><a class="src-link" href="http://www.nea.gov.cn/" target="_blank">nea.gov.cn</a></td><td><span class="tag-freq">月</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">巨潮资讯（A股财报）</td><td>全部A股季报：合同负债、营收增速、毛利率、在手订单</td><td><a class="src-link" href="https://www.cninfo.com.cn/" target="_blank">cninfo.com.cn</a></td><td><span class="tag-freq">季</span></td><td><span class="tag-free">免费</span></td></tr>
+          <tr><td class="name-col">猫眼专业版</td><td>院线实时票房；传媒行业日度高频指标</td><td><a class="src-link" href="https://piaofang.maoyan.com/dashboard" target="_blank">piaofang.maoyan.com</a></td><td><span class="tag-freq">日</span></td><td><span class="tag-free">免费</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="avail-tier">
+    <div class="avail-tier-title t-part">⚠️ 摘要/新闻稿免费，完整数据需付费或注册（6个数据源）</div>
+    <div class="card" style="padding:0;overflow:hidden;">
+      <table class="avail-table">
+        <thead><tr><th style="width:18%">数据源</th><th style="width:25%">覆盖指标</th><th style="width:28%">免费内容</th><th style="width:22%">网址</th><th style="width:7%">状态</th></tr></thead>
+        <tbody>
+          <tr><td class="name-col">TrendForce</td><td>DRAM/NAND价格、晶圆厂利用率、面板价格</td><td>季度新闻稿摘要；现货价格页面部分可见</td><td><a class="src-link" href="https://www.trendforce.com/presscenter/" target="_blank">trendforce.com/presscenter</a></td><td><span class="tag-partial">摘要免费</span></td></tr>
+          <tr><td class="name-col">IDC</td><td>手机/PC/服务器全球出货量（分品牌、分地区）</td><td>季度新闻稿含总量同比；分品牌份额表格需付费</td><td><a class="src-link" href="https://www.idc.com/resource-center/press-releases/" target="_blank">idc.com/resource-center</a></td><td><span class="tag-partial">摘要免费</span></td></tr>
+          <tr><td class="name-col">Canalys</td><td>手机/PC出货量（更细分品牌&渠道）</td><td>季度快报新闻稿（Top 5品牌同比）</td><td><a class="src-link" href="https://www.canalys.com/newsroom" target="_blank">canalys.com/newsroom</a></td><td><span class="tag-partial">摘要免费</span></td></tr>
+          <tr><td class="name-col">Omdia（面板价格）</td><td>TV/笔电/手机面板月度均价及12个月预测</td><td>PriceWise月报注册后免费；大部分深度报告付费</td><td><a class="src-link" href="https://omdia.tech.informa.com/" target="_blank">omdia.tech.informa.com</a></td><td><span class="tag-partial">注册免费</span></td></tr>
+          <tr><td class="name-col">SEMI Billings 报告</td><td>北美半导体设备月度出货额（Billings）</td><td>月度新闻稿含同比数字</td><td><a class="src-link" href="https://www.semi.org/en/products-services/market-data/equipment/billings-report" target="_blank">semi.org · billings-report</a></td><td><span class="tag-partial">摘要免费</span></td></tr>
+          <tr><td class="name-col">LEDinside（TrendForce子站）</td><td>LED芯片ASP、Mini/Micro LED渗透率</td><td>行业快讯摘要免费；价格数据库付费</td><td><a class="src-link" href="https://www.ledinside.com/" target="_blank">ledinside.com</a></td><td><span class="tag-partial">摘要免费</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="avail-tier">
+    <div class="avail-tier-title t-paid">❌ 无公开免费渠道，需商业数据库或产业调研</div>
+    <div class="grid grid-3">
+      <div class="card"><div class="card-header"><span class="card-title" style="font-size:12px;">Wind / iFind</span><span class="tag-paid-b" style="margin-left:auto;">付费</span></div><div class="ind-logic" style="font-size:11px;color:var(--text2);line-height:1.6;">A股估值分位数、行业成交占比、换手率、拥挤度、资金流向。<br><strong style="color:var(--accent2)">替代方案：</strong>iFind MCP（已有）</div></div>
+      <div class="card"><div class="card-header"><span class="card-title" style="font-size:12px;">光模块交货周期</span><span class="tag-paid-b" style="margin-left:auto;">调研</span></div><div class="ind-logic" style="font-size:11px;color:var(--text2);line-height:1.6;">无公开数据，需产业链一手调研或券商调研纪要。<br><strong style="color:var(--accent2)">替代方案：</strong>追踪中际旭创/天孚通信公告</div></div>
+      <div class="card"><div class="card-header"><span class="card-title" style="font-size:12px;">LightCounting 光模块</span><span class="tag-paid-b" style="margin-left:auto;">付费</span></div><div class="ind-logic" style="font-size:11px;color:var(--text2);line-height:1.6;">400G/800G出货量细分数据，订阅价格极高。<br><strong style="color:var(--accent2)">替代方案：</strong>用头部公司财报间接推算</div></div>
+    </div>
+  </div>
+  <div class="section-title" style="margin-top:20px;">指标体系使用 <span>优先级建议</span></div>
+  <table class="rotation-table">
+    <thead><tr><th>优先级</th><th>指标类型</th><th>使用时机</th><th>代表数据源</th><th>可得性</th></tr></thead>
+    <tbody>
+      <tr><td><strong style="color:var(--red)">P0 每季必看</strong></td><td>美股大厂财报/指引</td><td>财报季（1/4/7/10月）</td><td>英伟达、台积电、苹果、Meta/Google季报</td><td><span class="tag-free">完全免费</span></td></tr>
+      <tr><td><strong style="color:var(--orange)">P1 月度更新</strong></td><td>量价/招标/宏观</td><td>每月</td><td>运营商招标、国统局PMI+机器人产量、SIA销售额、台湾月营收</td><td><span class="tag-free">完全免费</span></td></tr>
+      <tr><td><strong style="color:var(--yellow)">P2 季度验证</strong></td><td>A股财务景气</td><td>季报披露期</td><td>巨潮季报（合同负债/毛利率/在手订单）</td><td><span class="tag-free">完全免费</span></td></tr>
+      <tr><td><strong style="color:var(--cyan)">P3 月度参考</strong></td><td>行业量价（摘要）</td><td>每月</td><td>TrendForce新闻稿、IDC/Canalys快报、Omdia面板摘要</td><td><span class="tag-partial">摘要免费</span></td></tr>
+      <tr><td><strong style="color:var(--purple)">P4 专项工具</strong></td><td>A股估值/资金</td><td>日度监控</td><td>iFind MCP（估值分位、成交占比、换手率）</td><td><span class="tag-partial">内部工具</span></td></tr>
+      <tr><td><strong style="color:var(--text3)">P5 事件驱动</strong></td><td>产业里程碑</td><td>不定期</td><td>特斯拉/华为发布会、火箭发射、BIS制裁公告</td><td><span class="tag-free">公开新闻</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+</div><!-- /main -->
+
+<!-- ══════════ 图表Modal ══════════ -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal-header">
+    <button class="modal-back" onclick="closeModal()">← 返回</button>
+    <div class="modal-title" id="modalTitle">指标详情</div>
+  </div>
+  <div class="modal-body">
+    <div class="chart-meta-row">
+      <span class="tag-src" id="modalSrc" style="font-size:11px;"></span>
+      <span class="tag-freq" id="modalFreq" style="font-size:11px;"></span>
+      <span id="modalUpdate" style="font-size:11px;color:var(--text3);"></span>
+      <a id="modalSrcLink" href="#" target="_blank" rel="noopener" style="font-size:11px;color:var(--accent);text-decoration:none;display:none;margin-left:8px;">前往数据源 ↗</a>
+    </div>
+    <div class="time-range-btns" id="timeRangeBtns">
+      <button class="time-btn" onclick="setRange('6m')">6个月</button>
+      <button class="time-btn" onclick="setRange('1y')">1年</button>
+      <button class="time-btn" onclick="setRange('3y')">3年</button>
+      <button class="time-btn active" onclick="setRange('all')">全部</button>
+    </div>
+    <div id="chart-box"></div>
+    <div class="modal-info-card" id="modalInfoCard" style="display:none;">
+      <div class="mic-row"><span class="mic-label">多头信号：</span><span id="modalBull" style="color:var(--green)"></span></div>
+      <div class="mic-row"><span class="mic-label">空头信号：</span><span id="modalBear" style="color:var(--red)"></span></div>
+      <div class="mic-row"><span class="mic-label">逻辑说明：</span><span id="modalLogic" style="color:var(--text2)"></span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ── Tab切换 ── */
+function switchTab(idx){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',i===idx));
+  document.querySelectorAll('.section').forEach((s,i)=>s.classList.toggle('active',i===idx));
+  if(idx===1) renderCalendar();
+  if(idx===0) setTimeout(initSparklines,50);
+  if(idx===2) setTimeout(function(){initSub4Charts();tryFetchSub4Live();},80);
+}
+
+/* ── 大厂财报日历数据 ── */
+const earningsEvents = [
+  {co:"SIA",emoji:"\ud83d\udcca",event:"4月全球半导体销售额",date:"2026-06-25",watch:"全球半导体月度销售额同比、中国区分项数据",freq:"\u6708",p:"P1"},
+  {co:"JMTBA",emoji:"\u2699\ufe0f",event:"5月日本机床订单额",date:"2026-06-26",watch:"日本机床月订单额同比，领先中国机床行业3-6个月",freq:"\u6708",p:"P1"},
+  {co:"TSMC 月营收",emoji:"\ud83d\udcbe",event:"台积电6月营收发布",date:"2026-07-10",watch:"月营收同比增速、先进制程营收占比",freq:"\u6708",p:"P0"},
+  {co:"台湾MOPS",emoji:"\ud83c\uddf9\ud83c\uddfc",event:"科技厂6月营收（PCB/光模块/半导体）",date:"2026-07-10",watch:"欣兴/臻鼎/天孚通信等月营收同比，A股先行指标",freq:"\u6708",p:"P1"},
+  {co:"TSMC 法说会",emoji:"\ud83d\udcbe",event:"台积电Q2 2026法说会",date:"2026-07-17",watch:"产能利用率、N2产能规划、AI需求指引、Q3收入指引",freq:"\u5b63",p:"P0"},
+  {co:"SIA",emoji:"\ud83d\udcca",event:"5月全球半导体销售额",date:"2026-07-25",watch:"全球半导体月度销售额同比、中国区分项数据",freq:"\u6708",p:"P1"},
+  {co:"JMTBA",emoji:"\u2699\ufe0f",event:"6月日本机床订单额",date:"2026-07-26",watch:"日本机床月订单额同比，领先中国机床行业3-6个月",freq:"\u6708",p:"P1"},
+  {co:"Alphabet",emoji:"\ud83d\udd0d",event:"Alphabet Q2 2026财报",date:"2026-07-29",watch:"Google Cloud收入增速、广告收入同比、AI CapEx指引",freq:"\u5b63",p:"P0"},
+  {co:"Meta",emoji:"\ud83d\udcd8",event:"Meta Q2 2026财报",date:"2026-07-30",watch:"AI CapEx指引（最核心）、广告收入同比、MAU增长",freq:"\u5b63",p:"P0"},
+  {co:"Microsoft",emoji:"\ud83e\ude9f",event:"Microsoft Q4 FY2026财报",date:"2026-07-30",watch:"Azure云收入增速（AI加速器）、AI CapEx支出规模",freq:"\u5b63",p:"P0"},
+  {co:"Apple",emoji:"\ud83c\udf4e",event:"Apple Q3 FY2026财报",date:"2026-07-31",watch:"iPhone收入/指引、大中华区收入趋势、下季度收入指引",freq:"\u5b63",p:"P0"},
+  {co:"Amazon",emoji:"\ud83d\udce6",event:"Amazon Q2 2026财报",date:"2026-08-01",watch:"AWS云收入增速、AI CapEx规划、电商GMV同比",freq:"\u5b63",p:"P0"},
+  {co:"Qorvo",emoji:"\ud83d\udce1",event:"Qorvo Q1 FY2027财报",date:"2026-08-06",watch:"射频前端行业景气、手机需求下季指引",freq:"\u5b63",p:"P1"},
+  {co:"Skyworks",emoji:"\ud83d\udce1",event:"Skyworks Q3 FY2026财报",date:"2026-08-06",watch:"射频前端景气、苹果份额趋势、手机需求预判",freq:"\u5b63",p:"P1"},
+  {co:"IPG Photonics",emoji:"\u26a1",event:"IPG Q2 2026财报",date:"2026-08-07",watch:"全球光纤激光器行业景气、中国市场需求趋势",freq:"\u5b63",p:"P1"},
+  {co:"TSMC 月营收",emoji:"\ud83d\udcbe",event:"台积电7月营收发布",date:"2026-08-10",watch:"月营收同比增速、先进制程营收占比",freq:"\u6708",p:"P0"},
+  {co:"台湾MOPS",emoji:"\ud83c\uddf9\ud83c\uddfc",event:"科技厂7月营收（PCB/光模块/半导体）",date:"2026-08-10",watch:"欣兴/臻鼎/天孚通信等月营收同比，A股先行指标",freq:"\u6708",p:"P1"},
+  {co:"SIA",emoji:"\ud83d\udcca",event:"6月全球半导体销售额",date:"2026-08-25",watch:"全球半导体月度销售额同比、中国区分项数据",freq:"\u6708",p:"P1"},
+  {co:"JMTBA",emoji:"\u2699\ufe0f",event:"7月日本机床订单额",date:"2026-08-26",watch:"日本机床月订单额同比，领先中国机床行业3-6个月",freq:"\u6708",p:"P1"},
+  {co:"NVIDIA",emoji:"\ud83e\udde0",event:"NVIDIA Q2 FY2027财报",date:"2026-08-27",watch:"数据中心收入（最重磅）、Blackwell出货量、下季收入指引",freq:"\u5b63",p:"P0"},
+  {co:"TSMC 月营收",emoji:"\ud83d\udcbe",event:"台积电8月营收发布",date:"2026-09-10",watch:"月营收同比增速、先进制程营收占比",freq:"\u6708",p:"P0"},
+  {co:"台湾MOPS",emoji:"\ud83c\uddf9\ud83c\uddfc",event:"科技厂8月营收（PCB/光模块/半导体）",date:"2026-09-10",watch:"欣兴/臻鼎/天孚通信等月营收同比，A股先行指标",freq:"\u6708",p:"P1"},
+  {co:"SIA",emoji:"\ud83d\udcca",event:"7月全球半导体销售额",date:"2026-09-25",watch:"全球半导体月度销售额同比、中国区分项数据",freq:"\u6708",p:"P1"},
+  {co:"JMTBA",emoji:"\u2699\ufe0f",event:"8月日本机床订单额",date:"2026-09-26",watch:"日本机床月订单额同比，领先中国机床行业3-6个月",freq:"\u6708",p:"P1"},
+  {co:"TSMC 月营收",emoji:"\ud83d\udcbe",event:"台积电9月营收发布",date:"2026-10-10",watch:"月营收同比增速、先进制程营收占比",freq:"\u6708",p:"P0"},
+  {co:"台湾MOPS",emoji:"\ud83c\uddf9\ud83c\uddfc",event:"科技厂9月营收（PCB/光模块/半导体）",date:"2026-10-10",watch:"欣兴/臻鼎/天孚通信等月营收同比，A股先行指标",freq:"\u6708",p:"P1"},
+  {co:"TSMC 法说会",emoji:"\ud83d\udcbe",event:"台积电Q3 2026法说会",date:"2026-10-16",watch:"产能利用率、先进制程需求指引、N2良率进展",freq:"\u5b63",p:"P0"}
+];
+
+function daysFromNow(dateStr){
+  const t=new Date(dateStr), d=new Date();
+  d.setHours(0,0,0,0); t.setHours(0,0,0,0);
+  return Math.ceil((t-d)/(1000*60*60*24));
+}
+
+function renderCalendar(){
+  const sorted=[...earningsEvents].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const urgent=document.getElementById('cal-urgent');
+  const full=document.getElementById('cal-full');
+  urgent.innerHTML=''; full.innerHTML='';
+
+  const soon=sorted.filter(e=>daysFromNow(e.date)>=0&&daysFromNow(e.date)<=30);
+  soon.forEach(e=>{
+    const d=daysFromNow(e.date);
+    const cls=d<=7?'':'yellow';
+    urgent.innerHTML+=`<div class="cal-urgent-card ${cls}">
+      <div class="uc-days">${d}<span>天后</span></div>
+      <div class="uc-co">${e.emoji} ${e.co}</div>
+      <div class="uc-ev">${e.event}</div>
+    </div>`;
+  });
+  if(!soon.length) urgent.innerHTML='<div style="color:var(--text3);font-size:12px;padding:10px;">未来30天暂无重要事件</div>';
+
+  const all90=sorted.filter(e=>daysFromNow(e.date)>=0&&daysFromNow(e.date)<=90);
+  let tbl=`<table class="cal-table"><thead><tr><th>日期</th><th>距今</th><th>公司</th><th>事件</th><th>关注重点</th><th>频率</th><th>优先级</th></tr></thead><tbody>`;
+  all90.forEach(e=>{
+    const d=daysFromNow(e.date);
+    const bc=d<=7?'red':d<=30?'yellow':'gray';
+    const pc=e.p==='P0'?'badge-p0':'badge-p1';
+    tbl+=`<tr>
+      <td style="white-space:nowrap;color:var(--text2)">${e.date}</td>
+      <td><span class="badge-days ${bc}">${d}天</span></td>
+      <td class="co-col">${e.emoji} ${e.co}</td>
+      <td>${e.event}</td>
+      <td style="font-size:11px;color:var(--text2)">${e.watch}</td>
+      <td><span class="tag-freq">${e.freq}</span></td>
+      <td><span class="${pc}">${e.p}</span></td>
+    </tr>`;
+  });
+  tbl+='</tbody></table>';
+  full.innerHTML=tbl;
+}
+
+/* ── 指标历史数据（演示）── */
+const indicatorData = {
+  'capex-global-cloud':{
+    name:'全球云厂商AI CapEx（Meta+Alphabet+微软+亚马逊合计）',
+    unit:'亿美元',src:'各公司财报季度数据',freq:'季度',
+    bull:'CapEx季度环比增速>15%→看多光模块/液冷/AI PCB',
+    bear:'CapEx指引下调/收窄→谨慎',
+    logic:'四大云厂合计CapEx是AI算力链景气的根本驱动，季报指引发布时需第一时间解读',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26Q1'],
+    values:[285,291,305,318,323,342,371,408,488,578,645,710,812,938,1024,1118,1260]
+  },
+  'tsmc-utilization':{
+    name:'台积电产能利用率',
+    unit:'%',src:'台积电季度法说会',freq:'季度',
+    srcUrl:'https://investor.tsmc.com/english/quarterly-results',
+    bull:'>90%且环比上升→景气向好，看多设备/材料/上游',
+    bear:'<80%且持续下滑→去产能阶段，半导体行情承压',
+    logic:'台积电是全球最重要晶圆代工厂，其产能利用率是半导体大周期位置的最核心指标',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26Q1'],
+    values:[100,98,92,81,72,68,74,80,85,89,91,94,96,97,98,99,100]
+  },
+  'dram-spot':{
+    name:'DRAM DDR5现货均价',
+    unit:'美元/GB',src:'DRAMeXchange / TrendForce',freq:'月度',
+    srcUrl:'https://www.dramexchange.com/',
+    bull:'连续3个月环比上涨→存储景气拐点确认，买入存储产业链',
+    bear:'连续下跌超3个月→去库存仍在进行，规避存储相关标的',
+    logic:'存储价格是半导体最敏感的高频价格指标，领先存储公司毛利率约1-2个季度',
+    dates:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12'],
+    values:[3.8,4.1,4.3,4.5,4.6,4.8,5.0,5.1,4.9,4.7,4.5,4.3,4.2,4.4,4.6,4.8,5.0,5.2,5.4,5.5,5.6,5.7,5.8,6.0]
+  },
+  'smartphone-global':{
+    name:'全球智能手机季度出货量',
+    unit:'百万台',src:'IDC / Canalys',freq:'季度',
+    bull:'同比正增长连续两季→复苏确认，消费电子/射频/存储全线受益',
+    bear:'同比连续负增长→需求疲软，供应链压力加大',
+    logic:'全球手机出货是消费电子最大基本面变量，对A股苹果链/安卓链/射频厂商有直接传导',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3'],
+    values:[310,292,301,315,270,285,333,327,289,301,347,332,295,312,355]
+  },
+  /* ── 整体层面：Excel自动更新数据（最新：2026-06-22）── */
+  'tmt-share':{
+    name:'科技板块成交额占比（科技/全A）',
+    unit:'%',src:'iFind/Wind',freq:'日',
+    bull:'20%-30%，行情可持续；>30%且持续→科技主升浪',
+    bear:'≥40%历史高位，内部切换风险；≥45%极度过热',
+    logic:'科技板块成交额/全A成交额，最直接高频热度指标。当前42.8%，98.8%历史分位',
+    dates:["2024-01-02","2024-01-03","2024-01-04","2024-01-05","2024-01-08","2024-01-09","2024-01-10","2024-01-11","2024-01-12","2024-01-15","2024-01-16","2024-01-17","2024-01-18","2024-01-19","2024-01-22","2024-01-23","2024-01-24","2024-01-25","2024-01-26","2024-01-29","2024-01-30","2024-01-31","2024-02-01","2024-02-02","2024-02-05","2024-02-06","2024-02-07","2024-02-08","2024-02-19","2024-02-20","2024-02-21","2024-02-22","2024-02-23","2024-02-26","2024-02-27","2024-02-28","2024-02-29","2024-03-01","2024-03-04","2024-03-05","2024-03-06","2024-03-07","2024-03-08","2024-03-11","2024-03-12","2024-03-13","2024-03-14","2024-03-15","2024-03-18","2024-03-19","2024-03-20","2024-03-21","2024-03-22","2024-03-25","2024-03-26","2024-03-27","2024-03-28","2024-03-29","2024-04-01","2024-04-02","2024-04-03","2024-04-08","2024-04-09","2024-04-10","2024-04-11","2024-04-12","2024-04-15","2024-04-16","2024-04-17","2024-04-18","2024-04-19","2024-04-22","2024-04-23","2024-04-24","2024-04-25","2024-04-26","2024-04-29","2024-04-30","2024-05-06","2024-05-07","2024-05-08","2024-05-09","2024-05-10","2024-05-13","2024-05-14","2024-05-15","2024-05-16","2024-05-17","2024-05-20","2024-05-21","2024-05-22","2024-05-23","2024-05-24","2024-05-27","2024-05-28","2024-05-29","2024-05-30","2024-05-31","2024-06-03","2024-06-04","2024-06-05","2024-06-06","2024-06-07","2024-06-11","2024-06-12","2024-06-13","2024-06-14","2024-06-17","2024-06-18","2024-06-19","2024-06-20","2024-06-21","2024-06-24","2024-06-25","2024-06-26","2024-06-27","2024-06-28","2024-07-01","2024-07-02","2024-07-03","2024-07-04","2024-07-05","2024-07-08","2024-07-09","2024-07-10","2024-07-11","2024-07-12","2024-07-15","2024-07-16","2024-07-17","2024-07-18","2024-07-19","2024-07-22","2024-07-23","2024-07-24","2024-07-25","2024-07-26","2024-07-29","2024-07-30","2024-07-31","2024-08-01","2024-08-02","2024-08-05","2024-08-06","2024-08-07","2024-08-08","2024-08-09","2024-08-12","2024-08-13","2024-08-14","2024-08-15","2024-08-16","2024-08-19","2024-08-20","2024-08-21","2024-08-22","2024-08-23","2024-08-26","2024-08-27","2024-08-28","2024-08-29","2024-08-30","2024-09-02","2024-09-03","2024-09-04","2024-09-05","2024-09-06","2024-09-09","2024-09-10","2024-09-11","2024-09-12","2024-09-13","2024-09-18","2024-09-19","2024-09-20","2024-09-23","2024-09-24","2024-09-25","2024-09-26","2024-09-27","2024-09-30","2024-10-08","2024-10-09","2024-10-10","2024-10-11","2024-10-14","2024-10-15","2024-10-16","2024-10-17","2024-10-18","2024-10-21","2024-10-22","2024-10-23","2024-10-24","2024-10-25","2024-10-28","2024-10-29","2024-10-30","2024-10-31","2024-11-01","2024-11-04","2024-11-05","2024-11-06","2024-11-07","2024-11-08","2024-11-11","2024-11-12","2024-11-13","2024-11-14","2024-11-15","2024-11-18","2024-11-19","2024-11-20","2024-11-21","2024-11-22","2024-11-25","2024-11-26","2024-11-27","2024-11-28","2024-11-29","2024-12-02","2024-12-03","2024-12-04","2024-12-05","2024-12-06","2024-12-09","2024-12-10","2024-12-11","2024-12-12","2024-12-13","2024-12-16","2024-12-17","2024-12-18","2024-12-19","2024-12-20","2024-12-23","2024-12-24","2024-12-25","2024-12-26","2024-12-27","2024-12-30","2024-12-31","2025-01-02","2025-01-03","2025-01-06","2025-01-07","2025-01-08","2025-01-09","2025-01-10","2025-01-13","2025-01-14","2025-01-15","2025-01-16","2025-01-17","2025-01-20","2025-01-21","2025-01-22","2025-01-23","2025-01-24","2025-01-27","2025-02-05","2025-02-06","2025-02-07","2025-02-10","2025-02-11","2025-02-12","2025-02-13","2025-02-14","2025-02-17","2025-02-18","2025-02-19","2025-02-20","2025-02-21","2025-02-24","2025-02-25","2025-02-26","2025-02-27","2025-02-28","2025-03-03","2025-03-04","2025-03-05","2025-03-06","2025-03-07","2025-03-10","2025-03-11","2025-03-12","2025-03-13","2025-03-14","2025-03-17","2025-03-18","2025-03-19","2025-03-20","2025-03-21","2025-03-24","2025-03-25","2025-03-26","2025-03-27","2025-03-28","2025-03-31","2025-04-01","2025-04-02","2025-04-03","2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-18","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-26","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-19","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-04","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-01","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-27","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-25","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-19","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-03","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-20","2026-04-21","2026-04-22","2026-04-23","2026-04-24","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-06","2026-05-07","2026-05-08","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-25","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-22"],
+    values:[28.27,29.91,28.54,26.55,27.29,27.07,24.6,25.67,23.37,24.07,24.04,23.13,24.15,26.73,25.91,27.98,26.14,25.93,26.07,24.2,23.64,25.3,26.88,25.4,25.19,25.15,24.46,25.38,30.15,32.77,28.56,33.43,33.67,31.84,36.26,32.88,33.51,37.91,37.5,38.74,35.14,32.64,34.89,31.25,30.0,36.13,31.87,30.33,32.95,34.38,37.46,36.7,38.43,38.1,36.34,34.13,34.96,31.11,29.44,27.73,26.0,22.76,22.85,23.44,24.48,25.6,23.68,23.93,25.58,24.11,22.93,21.73,22.0,28.03,25.53,26.94,25.41,25.02,22.96,24.82,23.71,21.19,21.77,21.18,22.94,21.8,23.85,22.35,21.87,23.45,22.54,24.27,26.59,26.12,26.36,23.44,24.8,28.0,28.53,26.53,27.41,29.84,28.83,30.12,32.61,33.04,31.07,34.1,35.42,36.06,35.54,32.93,32.75,32.87,34.89,35.64,33.21,30.4,30.65,31.76,30.37,29.35,30.06,34.77,33.35,33.48,29.94,31.38,36.61,32.0,33.61,33.75,33.24,31.97,31.13,29.6,26.96,28.64,28.41,28.55,28.94,28.86,28.61,24.78,25.15,25.69,27.08,25.36,24.26,29.76,30.17,31.27,30.47,29.36,32.33,30.81,31.14,29.65,30.27,27.73,28.51,29.9,30.37,29.27,30.04,31.23,31.12,27.7,30.91,26.84,29.91,30.75,28.09,27.23,30.22,33.71,28.83,28.65,26.83,28.44,26.31,26.23,33.55,32.29,32.29,32.5,36.96,32.87,37.8,37.7,40.71,39.18,33.42,34.4,31.77,31.76,34.78,35.82,36.33,33.74,30.38,31.94,31.72,28.81,32.91,37.4,35.17,36.82,36.98,38.33,34.4,33.51,34.86,36.39,35.27,34.96,33.76,36.12,36.54,35.3,33.51,32.71,32.68,34.32,33.86,31.93,32.0,34.73,32.97,34.5,35.94,35.64,38.67,42.26,43.33,39.15,37.39,37.04,40.21,38.19,36.83,36.19,33.26,33.04,31.46,35.41,34.13,35.86,35.83,32.81,35.95,36.02,37.25,38.06,35.54,38.63,38.99,37.77,39.75,40.38,44.63,44.47,43.33,44.24,43.55,44.38,43.4,45.28,45.61,42.84,41.82,40.74,44.53,42.66,42.68,39.66,38.64,37.6,35.46,36.54,37.34,41.38,39.34,34.76,32.87,36.5,35.29,31.5,31.31,33.38,32.11,30.82,30.47,29.64,26.9,23.53,26.36,25.34,27.87,25.65,25.96,27.43,25.02,26.56,27.51,27.47,30.62,29.25,25.7,26.85,26.77,27.26,28.38,27.44,28.64,25.55,27.57,26.78,27.46,29.55,31.37,28.62,29.12,28.1,26.31,26.69,26.06,24.72,22.25,22.56,22.62,21.76,22.66,23.24,24.05,22.76,22.95,27.31,24.85,23.7,24.52,30.13,28.47,26.94,26.44,25.88,28.69,26.15,29.49,28.73,30.32,30.35,30.45,30.83,29.61,31.09,32.22,32.04,32.37,30.24,26.44,28.54,31.07,29.24,30.56,28.7,27.85,27.83,25.91,31.74,32.4,32.6,31.1,25.0,23.28,22.38,22.79,25.84,29.13,29.23,27.25,31.46,31.68,28.75,29.52,29.24,31.27,29.86,28.85,32.25,32.55,33.24,31.22,34.19,32.54,33.78,36.12,39.07,37.1,36.88,38.7,39.84,35.54,36.74,36.2,33.24,33.91,31.95,29.42,28.41,33.04,36.75,36.79,34.17,33.97,34.27,36.45,36.0,39.15,38.48,41.32,40.01,38.0,33.9,35.67,36.86,34.64,33.58,32.15,30.54,30.88,31.18,32.92,34.59,31.64,29.81,35.99,35.97,35.57,33.32,32.89,32.32,31.79,30.95,28.67,30.57,27.39,27.76,28.62,27.39,25.1,25.69,26.55,29.64,29.64,29.58,31.11,35.22,37.49,38.78,38.49,35.45,35.88,36.76,35.08,33.16,32.89,35.91,37.17,35.08,33.72,34.66,32.23,30.98,32.89,32.06,29.45,32.2,29.63,32.02,30.45,28.02,29.12,29.69,31.14,32.66,32.11,32.61,32.67,33.63,35.89,36.12,36.47,36.92,36.79,33.29,31.84,34.27,35.18,32.73,29.92,32.38,33.39,31.82,32.26,34.01,34.33,31.92,30.05,30.64,34.7,36.84,35.22,35.98,35.93,35.06,30.87,34.04,34.2,29.4,29.39,26.7,31.38,29.26,29.43,33.16,30.6,28.82,27.79,28.87,30.09,33.48,31.32,32.81,28.28,28.5,30.83,29.12,27.88,27.05,28.27,30.1,28.76,31.05,31.61,35.5,36.83,36.66,35.27,36.35,34.56,35.38,36.56,36.98,35.36,37.73,37.12,39.65,38.97,37.03,33.78,35.08,38.57,37.77,36.53,39.55,38.62,39.83,40.12,40.38,40.61,42.52,42.52,42.29,42.9,44.7,43.86,44.71,44.52,43.58,43.31,43.13,46.06,43.98,44.9,42.19,43.88,42.86,42.26,41.32,40.88,41.83,44.12,44.39,42.8]
+  },
+  'tmt-share-pct':{
+    name:'科技成交额占比历史分位数',
+    unit:'%分位',src:'iFind/Wind',freq:'日',
+    bull:'<30%分位，低位布局期',
+    bear:'>80%警惕；>95%触发内部切换信号',
+    logic:'当前98.8%历史分位（截至2026-06-22），超过95%分位历史上往往伴随板块内部轮动或降温',
+    dates:["2024-01-02","2024-01-03","2024-01-04","2024-01-05","2024-01-08","2024-01-09","2024-01-10","2024-01-11","2024-01-12","2024-01-15","2024-01-16","2024-01-17","2024-01-18","2024-01-19","2024-01-22","2024-01-23","2024-01-24","2024-01-25","2024-01-26","2024-01-29","2024-01-30","2024-01-31","2024-02-01","2024-02-02","2024-02-05","2024-02-06","2024-02-07","2024-02-08","2024-02-19","2024-02-20","2024-02-21","2024-02-22","2024-02-23","2024-02-26","2024-02-27","2024-02-28","2024-02-29","2024-03-01","2024-03-04","2024-03-05","2024-03-06","2024-03-07","2024-03-08","2024-03-11","2024-03-12","2024-03-13","2024-03-14","2024-03-15","2024-03-18","2024-03-19","2024-03-20","2024-03-21","2024-03-22","2024-03-25","2024-03-26","2024-03-27","2024-03-28","2024-03-29","2024-04-01","2024-04-02","2024-04-03","2024-04-08","2024-04-09","2024-04-10","2024-04-11","2024-04-12","2024-04-15","2024-04-16","2024-04-17","2024-04-18","2024-04-19","2024-04-22","2024-04-23","2024-04-24","2024-04-25","2024-04-26","2024-04-29","2024-04-30","2024-05-06","2024-05-07","2024-05-08","2024-05-09","2024-05-10","2024-05-13","2024-05-14","2024-05-15","2024-05-16","2024-05-17","2024-05-20","2024-05-21","2024-05-22","2024-05-23","2024-05-24","2024-05-27","2024-05-28","2024-05-29","2024-05-30","2024-05-31","2024-06-03","2024-06-04","2024-06-05","2024-06-06","2024-06-07","2024-06-11","2024-06-12","2024-06-13","2024-06-14","2024-06-17","2024-06-18","2024-06-19","2024-06-20","2024-06-21","2024-06-24","2024-06-25","2024-06-26","2024-06-27","2024-06-28","2024-07-01","2024-07-02","2024-07-03","2024-07-04","2024-07-05","2024-07-08","2024-07-09","2024-07-10","2024-07-11","2024-07-12","2024-07-15","2024-07-16","2024-07-17","2024-07-18","2024-07-19","2024-07-22","2024-07-23","2024-07-24","2024-07-25","2024-07-26","2024-07-29","2024-07-30","2024-07-31","2024-08-01","2024-08-02","2024-08-05","2024-08-06","2024-08-07","2024-08-08","2024-08-09","2024-08-12","2024-08-13","2024-08-14","2024-08-15","2024-08-16","2024-08-19","2024-08-20","2024-08-21","2024-08-22","2024-08-23","2024-08-26","2024-08-27","2024-08-28","2024-08-29","2024-08-30","2024-09-02","2024-09-03","2024-09-04","2024-09-05","2024-09-06","2024-09-09","2024-09-10","2024-09-11","2024-09-12","2024-09-13","2024-09-18","2024-09-19","2024-09-20","2024-09-23","2024-09-24","2024-09-25","2024-09-26","2024-09-27","2024-09-30","2024-10-08","2024-10-09","2024-10-10","2024-10-11","2024-10-14","2024-10-15","2024-10-16","2024-10-17","2024-10-18","2024-10-21","2024-10-22","2024-10-23","2024-10-24","2024-10-25","2024-10-28","2024-10-29","2024-10-30","2024-10-31","2024-11-01","2024-11-04","2024-11-05","2024-11-06","2024-11-07","2024-11-08","2024-11-11","2024-11-12","2024-11-13","2024-11-14","2024-11-15","2024-11-18","2024-11-19","2024-11-20","2024-11-21","2024-11-22","2024-11-25","2024-11-26","2024-11-27","2024-11-28","2024-11-29","2024-12-02","2024-12-03","2024-12-04","2024-12-05","2024-12-06","2024-12-09","2024-12-10","2024-12-11","2024-12-12","2024-12-13","2024-12-16","2024-12-17","2024-12-18","2024-12-19","2024-12-20","2024-12-23","2024-12-24","2024-12-25","2024-12-26","2024-12-27","2024-12-30","2024-12-31","2025-01-02","2025-01-03","2025-01-06","2025-01-07","2025-01-08","2025-01-09","2025-01-10","2025-01-13","2025-01-14","2025-01-15","2025-01-16","2025-01-17","2025-01-20","2025-01-21","2025-01-22","2025-01-23","2025-01-24","2025-01-27","2025-02-05","2025-02-06","2025-02-07","2025-02-10","2025-02-11","2025-02-12","2025-02-13","2025-02-14","2025-02-17","2025-02-18","2025-02-19","2025-02-20","2025-02-21","2025-02-24","2025-02-25","2025-02-26","2025-02-27","2025-02-28","2025-03-03","2025-03-04","2025-03-05","2025-03-06","2025-03-07","2025-03-10","2025-03-11","2025-03-12","2025-03-13","2025-03-14","2025-03-17","2025-03-18","2025-03-19","2025-03-20","2025-03-21","2025-03-24","2025-03-25","2025-03-26","2025-03-27","2025-03-28","2025-03-31","2025-04-01","2025-04-02","2025-04-03","2025-04-07","2025-04-08","2025-04-09","2025-04-10","2025-04-11","2025-04-14","2025-04-15","2025-04-16","2025-04-17","2025-04-18","2025-04-21","2025-04-22","2025-04-23","2025-04-24","2025-04-25","2025-04-28","2025-04-29","2025-04-30","2025-05-06","2025-05-07","2025-05-08","2025-05-09","2025-05-12","2025-05-13","2025-05-14","2025-05-15","2025-05-16","2025-05-19","2025-05-20","2025-05-21","2025-05-22","2025-05-23","2025-05-26","2025-05-27","2025-05-28","2025-05-29","2025-05-30","2025-06-03","2025-06-04","2025-06-05","2025-06-06","2025-06-09","2025-06-10","2025-06-11","2025-06-12","2025-06-13","2025-06-16","2025-06-17","2025-06-18","2025-06-19","2025-06-20","2025-06-23","2025-06-24","2025-06-25","2025-06-26","2025-06-27","2025-06-30","2025-07-01","2025-07-02","2025-07-03","2025-07-04","2025-07-07","2025-07-08","2025-07-09","2025-07-10","2025-07-11","2025-07-14","2025-07-15","2025-07-16","2025-07-17","2025-07-18","2025-07-21","2025-07-22","2025-07-23","2025-07-24","2025-07-25","2025-07-28","2025-07-29","2025-07-30","2025-07-31","2025-08-01","2025-08-04","2025-08-05","2025-08-06","2025-08-07","2025-08-08","2025-08-11","2025-08-12","2025-08-13","2025-08-14","2025-08-15","2025-08-18","2025-08-19","2025-08-20","2025-08-21","2025-08-22","2025-08-25","2025-08-26","2025-08-27","2025-08-28","2025-08-29","2025-09-01","2025-09-02","2025-09-03","2025-09-04","2025-09-05","2025-09-08","2025-09-09","2025-09-10","2025-09-11","2025-09-12","2025-09-15","2025-09-16","2025-09-17","2025-09-18","2025-09-19","2025-09-22","2025-09-23","2025-09-24","2025-09-25","2025-09-26","2025-09-29","2025-09-30","2025-10-09","2025-10-10","2025-10-13","2025-10-14","2025-10-15","2025-10-16","2025-10-17","2025-10-20","2025-10-21","2025-10-22","2025-10-23","2025-10-24","2025-10-27","2025-10-28","2025-10-29","2025-10-30","2025-10-31","2025-11-03","2025-11-04","2025-11-05","2025-11-06","2025-11-07","2025-11-10","2025-11-11","2025-11-12","2025-11-13","2025-11-14","2025-11-17","2025-11-18","2025-11-19","2025-11-20","2025-11-21","2025-11-24","2025-11-25","2025-11-26","2025-11-27","2025-11-28","2025-12-01","2025-12-02","2025-12-03","2025-12-04","2025-12-05","2025-12-08","2025-12-09","2025-12-10","2025-12-11","2025-12-12","2025-12-15","2025-12-16","2025-12-17","2025-12-18","2025-12-19","2025-12-22","2025-12-23","2025-12-24","2025-12-25","2025-12-26","2025-12-29","2025-12-30","2025-12-31","2026-01-05","2026-01-06","2026-01-07","2026-01-08","2026-01-09","2026-01-12","2026-01-13","2026-01-14","2026-01-15","2026-01-16","2026-01-19","2026-01-20","2026-01-21","2026-01-22","2026-01-23","2026-01-26","2026-01-27","2026-01-28","2026-01-29","2026-01-30","2026-02-02","2026-02-03","2026-02-04","2026-02-05","2026-02-06","2026-02-09","2026-02-10","2026-02-11","2026-02-12","2026-02-13","2026-02-24","2026-02-25","2026-02-26","2026-02-27","2026-03-02","2026-03-03","2026-03-04","2026-03-05","2026-03-06","2026-03-09","2026-03-10","2026-03-11","2026-03-12","2026-03-13","2026-03-16","2026-03-17","2026-03-18","2026-03-19","2026-03-20","2026-03-23","2026-03-24","2026-03-25","2026-03-26","2026-03-27","2026-03-30","2026-03-31","2026-04-01","2026-04-02","2026-04-03","2026-04-07","2026-04-08","2026-04-09","2026-04-10","2026-04-13","2026-04-14","2026-04-15","2026-04-16","2026-04-17","2026-04-20","2026-04-21","2026-04-22","2026-04-23","2026-04-24","2026-04-27","2026-04-28","2026-04-29","2026-04-30","2026-05-06","2026-05-07","2026-05-08","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-18","2026-05-19","2026-05-20","2026-05-21","2026-05-22","2026-05-25","2026-05-26","2026-05-27","2026-05-28","2026-05-29","2026-06-01","2026-06-02","2026-06-03","2026-06-04","2026-06-05","2026-06-08","2026-06-09","2026-06-10","2026-06-11","2026-06-12","2026-06-15","2026-06-16","2026-06-17","2026-06-18","2026-06-22"],
+    values:[64.1,70.4,65.1,58.0,60.8,59.9,49.7,54.5,44.3,47.8,47.6,43.2,48.1,58.6,55.3,63.2,56.3,55.5,56.0,48.3,45.6,52.7,59.2,53.3,52.5,52.2,49.4,53.2,71.7,81.7,65.2,84.0,84.6,78.3,91.7,82.1,84.3,95.2,94.4,96.4,88.5,81.1,88.0,75.8,71.0,91.4,78.4,72.4,82.5,87.0,94.3,92.6,95.9,95.4,91.8,86.0,88.0,75.2,68.5,62.3,55.7,41.4,41.9,44.8,49.5,54.2,45.9,47.2,54.1,48.0,42.1,37.0,38.3,63.4,53.8,59.4,53.4,51.6,42.2,50.5,45.9,34.3,37.2,34.3,42.1,37.4,46.9,39.3,37.8,44.8,40.5,48.7,58.2,56.2,57.3,44.7,50.5,63.2,65.1,58.0,61.3,70.1,66.3,71.6,81.0,82.7,75.0,85.9,89.3,91.1,89.7,82.5,81.6,82.0,87.9,89.9,83.2,72.7,73.9,77.9,72.5,68.1,71.3,87.8,83.7,84.1,70.6,76.5,92.4,78.9,84.5,85.0,83.4,78.8,75.4,69.1,59.7,65.6,64.5,65.2,66.7,66.5,65.4,50.4,52.3,54.6,60.0,53.0,48.6,69.8,71.7,75.9,73.0,68.2,80.3,74.2,75.4,69.4,72.2,62.3,65.0,70.3,72.5,68.0,71.1,75.7,75.3,62.2,74.7,59.1,70.4,74.1,63.5,60.6,71.9,84.7,66.4,65.6,59.1,64.6,56.9,56.6,84.4,80.2,80.1,80.7,93.4,82.1,95.0,94.8,98.0,96.9,83.9,87.2,78.0,77.9,87.9,90.3,91.7,84.8,72.6,78.7,77.7,66.1,82.4,94.3,88.6,92.9,93.5,95.8,87.1,84.3,87.9,91.9,88.8,88.1,85.0,91.2,92.2,88.9,84.3,81.5,81.3,86.8,85.3,78.6,78.9,87.7,82.6,87.3,90.8,89.9,96.3,98.5,99.1,96.9,94.2,93.6,97.6,95.6,93.0,91.4,83.4,82.8,76.7,89.2,86.0,90.4,90.3,81.9,90.8,91.0,94.0,95.4,89.7,96.2,96.6,95.0,97.2,97.7,99.7,99.6,99.1,99.5,99.2,99.5,99.2,99.9,99.9,98.9,98.3,98.1,99.7,98.8,98.8,97.2,96.2,94.5,89.5,92.3,94.1,98.3,97.0,87.8,82.0,92.1,88.9,76.7,76.1,83.8,79.4,74.2,73.0,69.4,59.3,45.2,57.2,52.9,63.0,54.4,55.6,61.4,51.7,58.1,61.7,61.6,73.7,67.9,54.7,59.2,58.7,60.6,64.4,61.5,65.5,53.9,61.9,58.8,61.5,68.9,76.3,65.4,67.4,63.7,57.0,58.4,55.9,50.1,39.2,40.7,40.9,37.2,41.1,43.6,47.6,41.4,42.2,61.0,50.7,45.9,49.6,71.6,64.8,59.5,57.6,55.1,65.8,56.3,68.7,65.9,72.3,72.5,72.9,74.4,69.1,75.1,79.9,79.1,80.5,72.0,57.7,65.1,75.1,67.7,73.3,65.9,62.9,62.7,55.4,77.8,80.5,81.0,75.2,51.4,43.8,39.6,41.6,55.0,67.5,67.7,60.6,76.6,77.4,66.0,68.7,67.7,76.0,70.1,66.4,80.0,80.8,83.3,75.7,86.2,80.8,85.1,91.3,96.7,93.7,93.3,96.3,97.3,89.6,92.7,91.5,83.3,85.4,78.8,68.4,64.5,82.8,92.7,92.8,86.2,85.5,86.6,92.0,91.0,96.8,95.9,98.3,97.5,95.3,85.3,90.0,93.2,87.5,84.5,79.6,73.2,74.6,75.5,82.4,87.4,77.2,70.0,90.9,90.9,89.8,83.6,82.3,80.3,78.1,74.7,65.7,73.3,61.3,62.5,65.4,61.2,52.1,54.7,58.1,69.3,69.4,69.1,75.3,88.7,94.3,96.4,96.0,89.4,90.4,92.8,88.3,83.1,82.2,90.5,93.8,88.3,84.8,87.5,79.9,74.8,82.2,79.3,68.6,79.8,69.2,79.0,72.9,63.3,67.3,69.5,75.5,81.2,79.4,81.1,81.2,84.5,90.5,91.2,92.0,93.3,92.8,83.6,78.3,86.6,88.6,81.5,70.5,80.5,83.8,78.2,80.0,85.6,86.9,78.5,71.2,73.7,87.6,93.1,88.7,90.9,90.7,88.2,74.6,85.7,86.3,68.3,68.2,58.5,76.4,67.9,68.4,83.2,73.5,66.2,62.5,66.6,71.4,84.2,76.2,81.9,64.2,64.9,74.3,67.4,63.0,59.9,64.1,71.4,66.1,75.0,77.1,89.6,93.0,92.5,88.8,91.8,87.4,89.1,92.4,93.5,89.1,94.9,93.8,97.1,96.6,93.6,85.0,88.3,96.0,94.9,92.2,97.1,96.2,97.3,97.6,97.7,97.9,98.7,98.7,98.6,99.0,99.7,99.3,99.8,99.6,99.2,99.0,99.0,100,99.4,99.8,98.4,99.3,98.9,98.5,98.2,98.1,98.4,99.4,99.5,98.8]
+  },
+  'tmt-turnover-ratio':{
+    name:'科技换手率/沪深300换手率（比值）',
+    unit:'倍',src:'iFind/Wind',freq:'周',
+    bull:'比值<30%历史分位，情绪低迷，科技行情启动前兆',
+    bear:'比值>70%历史分位拥挤；当前4.327倍=100%历史分位',
+    logic:'衡量科技板块相对市场的情绪活跃度。当前4.327倍，处于100%历史分位，属极度亢奋区间',
+    dates:["2024-01-05","2024-01-12","2024-01-19","2024-01-26","2024-02-02","2024-02-08","2024-02-23","2024-03-01","2024-03-08","2024-03-15","2024-03-22","2024-03-29","2024-04-03","2024-04-12","2024-04-19","2024-04-26","2024-04-30","2024-05-10","2024-05-17","2024-05-24","2024-05-31","2024-06-07","2024-06-14","2024-06-21","2024-06-28","2024-07-05","2024-07-12","2024-07-19","2024-07-26","2024-08-02","2024-08-09","2024-08-16","2024-08-23","2024-08-30","2024-09-06","2024-09-13","2024-09-20","2024-09-27","2024-09-30","2024-10-11","2024-10-18","2024-10-25","2024-11-01","2024-11-08","2024-11-15","2024-11-22","2024-11-29","2024-12-06","2024-12-13","2024-12-20","2024-12-27","2025-01-03","2025-01-10","2025-01-17","2025-01-24","2025-01-27","2025-02-07","2025-02-14","2025-02-21","2025-02-28","2025-03-07","2025-03-14","2025-03-21","2025-03-28","2025-04-03","2025-04-11","2025-04-18","2025-04-25","2025-04-30","2025-05-09","2025-05-16","2025-05-23","2025-05-30","2025-06-06","2025-06-13","2025-06-20","2025-06-27","2025-07-04","2025-07-11","2025-07-18","2025-07-25","2025-08-01","2025-08-08","2025-08-15","2025-08-22","2025-08-29","2025-09-05","2025-09-12","2025-09-19","2025-09-26","2025-09-30","2025-10-10","2025-10-17","2025-10-24","2025-10-31","2025-11-07","2025-11-14","2025-11-21","2025-11-28","2025-12-05","2025-12-12","2025-12-19","2025-12-26","2025-12-31","2026-01-09","2026-01-16","2026-01-23","2026-01-30","2026-02-06","2026-02-13","2026-02-27","2026-03-06","2026-03-13","2026-03-20","2026-03-27","2026-04-03","2026-04-10","2026-04-17","2026-04-24","2026-04-30","2026-05-08","2026-05-15","2026-05-22","2026-05-29","2026-06-05","2026-06-12","2026-06-18"],
+    values:[5.527,4.88,4.215,4.01,3.847,4.414,5.48,6.686,6.208,5.879,6.966,7.071,5.468,4.517,4.061,4.073,3.84,3.818,3.781,3.894,4.471,4.959,4.541,5.147,5.467,5.031,4.941,4.673,4.41,4.759,5.117,6.142,6.806,5.661,5.685,6.015,5.866,5.111,4.378,4.251,5.287,6.562,6.987,5.71,6.583,6.635,8.21,8.638,8.407,8.789,7.573,6.052,6.595,7.195,7.102,7.158,8.11,9.826,8.69,8.043,7.745,7.742,6.625,5.696,4.727,4.093,5.031,5.76,5.548,6.146,5.022,5.68,6.007,6.275,6.003,6.146,5.937,6.218,5.028,4.872,3.332,4.106,5.395,5.668,5.702,5.629,4.768,4.898,5.098,5.557,4.303,3.743,3.254,3.744,3.988,4.087,4.006,4.789,6.087,5.775,5.249,5.035,5.183,5.123,5.443,6.28,4.635,4.011,4.239,5.791,4.687,3.717,3.728,3.451,3.545,3.734,4.622,5.077,5.427,5.015,4.841,4.956,5.398,5.18,4.84,4.796,4.327]
+  },
+  'tmt-turnover-pct':{
+    name:'换手率比值历史分位数',
+    unit:'%分位',src:'iFind/Wind',freq:'周',
+    bull:'<30%分位，冷清，可逆向布局',
+    bear:'>90%分位过热；当前100%历史极值',
+    logic:'科技/沪深300换手率比值的历史分位，与成交占比分位共同判断拥挤度',
+    dates:["2024-01-05","2024-01-12","2024-01-19","2024-01-26","2024-02-02","2024-02-08","2024-02-23","2024-03-01","2024-03-08","2024-03-15","2024-03-22","2024-03-29","2024-04-03","2024-04-12","2024-04-19","2024-04-26","2024-04-30","2024-05-10","2024-05-17","2024-05-24","2024-05-31","2024-06-07","2024-06-14","2024-06-21","2024-06-28","2024-07-05","2024-07-12","2024-07-19","2024-07-26","2024-08-02","2024-08-09","2024-08-16","2024-08-23","2024-08-30","2024-09-06","2024-09-13","2024-09-20","2024-09-27","2024-09-30","2024-10-11","2024-10-18","2024-10-25","2024-11-01","2024-11-08","2024-11-15","2024-11-22","2024-11-29","2024-12-06","2024-12-13","2024-12-20","2024-12-27","2025-01-03","2025-01-10","2025-01-17","2025-01-24","2025-01-27","2025-02-07","2025-02-14","2025-02-21","2025-02-28","2025-03-07","2025-03-14","2025-03-21","2025-03-28","2025-04-03","2025-04-11","2025-04-18","2025-04-25","2025-04-30","2025-05-09","2025-05-16","2025-05-23","2025-05-30","2025-06-06","2025-06-13","2025-06-20","2025-06-27","2025-07-04","2025-07-11","2025-07-18","2025-07-25","2025-08-01","2025-08-08","2025-08-15","2025-08-22","2025-08-29","2025-09-05","2025-09-12","2025-09-19","2025-09-26","2025-09-30","2025-10-10","2025-10-17","2025-10-24","2025-10-31","2025-11-07","2025-11-14","2025-11-21","2025-11-28","2025-12-05","2025-12-12","2025-12-19","2025-12-26","2025-12-31","2026-01-09","2026-01-16","2026-01-23","2026-01-30","2026-02-06","2026-02-13","2026-02-27","2026-03-06","2026-03-13","2026-03-20","2026-03-27","2026-04-03","2026-04-10","2026-04-17","2026-04-24","2026-04-30","2026-05-08","2026-05-15","2026-05-22","2026-05-29","2026-06-05","2026-06-12","2026-06-18"],
+    values:[59.0,37.3,18.4,12.9,9.7,22.9,57.0,85.0,78.1,70.3,86.3,87.9,59.1,25.4,14.1,14.2,9.9,9.0,8.2,8.3,20.5,35.8,20.9,46.1,54.3,40.1,34.6,24.0,21.2,25.5,42.2,72.9,84.2,56.3,59.1,70.6,67.0,44.4,22.4,19.3,48.2,77.9,83.5,63.0,79.5,82.9,93.8,96.2,96.2,98.7,92.2,77.6,86.6,91.8,90.4,91.6,97.1,100,100,100,100,100,100,79.6,34.9,20.9,52.4,81.6,72.8,93.1,52.6,80.3,90.9,98.1,92.4,96.1,94.1,98.0,61.2,54.1,2.1,26.0,75.5,88.6,90.6,90.4,46.3,57.5,69.2,89.4,37.8,16.6,0,14.7,15.1,21.8,16.1,40.0,96.5,92.8,81.4,65.3,80.0,75.0,91.3,100,47.6,25.0,26.3,100,47.0,12.5,13.3,0,0,0,18.1,70.0,100,75.0,57.1,66.6,100,100,100,100,100]
+  },
+  'tmt-excess':{
+    name:'TMT板块滚动40日超额收益',
+    unit:'%',src:'iFind/Wind',freq:'周',
+    bull:'超额收益>0且加速上行→板块主升浪',
+    bear:'>+10%持续过热；当前+24.07%高位',
+    logic:'TMT相对全A的40日滚动超额收益。>+10%历史上是阶段性顶部信号；<-10%是逆向布局区间',
+    dates:["2024-01-05","2024-01-12","2024-01-19","2024-01-26","2024-02-02","2024-02-08","2024-02-23","2024-03-01","2024-03-08","2024-03-15","2024-03-22","2024-03-29","2024-04-03","2024-04-12","2024-04-19","2024-04-26","2024-04-30","2024-05-10","2024-05-17","2024-05-24","2024-05-31","2024-06-07","2024-06-14","2024-06-21","2024-06-28","2024-07-05","2024-07-12","2024-07-19","2024-07-26","2024-08-02","2024-08-09","2024-08-16","2024-08-23","2024-08-30","2024-09-06","2024-09-13","2024-09-20","2024-09-27","2024-09-30","2024-10-11","2024-10-18","2024-10-25","2024-11-01","2024-11-08","2024-11-15","2024-11-22","2024-11-29","2024-12-06","2024-12-13","2024-12-20","2024-12-27","2025-01-03","2025-01-10","2025-01-17","2025-01-24","2025-01-27","2025-02-07","2025-02-14","2025-02-21","2025-02-28","2025-03-07","2025-03-14","2025-03-21","2025-03-28","2025-04-03","2025-04-11","2025-04-18","2025-04-25","2025-04-30","2025-05-09","2025-05-16","2025-05-23","2025-05-30","2025-06-06","2025-06-13","2025-06-20","2025-06-27","2025-07-04","2025-07-11","2025-07-18","2025-07-25","2025-08-01","2025-08-08","2025-08-15","2025-08-22","2025-08-29","2025-09-05","2025-09-12","2025-09-19","2025-09-26","2025-09-30","2025-10-10","2025-10-17","2025-10-24","2025-10-31","2025-11-07","2025-11-14","2025-11-21","2025-11-28","2025-12-05","2025-12-12","2025-12-19","2025-12-26","2025-12-31","2026-01-09","2026-01-16","2026-01-23","2026-01-30","2026-02-06","2026-02-13","2026-02-27","2026-03-06","2026-03-13","2026-03-20","2026-03-27","2026-04-03","2026-04-10","2026-04-17","2026-04-24","2026-04-30","2026-05-08","2026-05-15","2026-05-22","2026-05-29","2026-06-05","2026-06-12","2026-06-18"],
+    values:[1.14,-4.19,-8.33,-8.97,-17.99,-20.26,-13.91,-9.14,-6.89,-3.33,2.81,0.19,8.19,5.28,0.17,-1.12,-2.92,-8.17,-9.05,-13.48,-6.83,-6.79,-0.58,5.78,0.24,-2.33,3.11,1.09,2.48,2.28,2.25,-2.17,-5.6,-1.39,-0.95,-1.79,0.01,-0.43,0.95,6.86,16.07,21.07,16.31,25.76,24.2,22.65,22.33,17.46,17.51,10.87,5.81,0.28,-2.41,-0.02,3.43,0.99,4.58,5.56,7.96,6.54,16.66,13.0,6.7,0.48,1.76,-5.73,-8.49,-11.52,-5.85,-8.58,-8.47,-8.48,-4.03,-0.86,0.19,1.57,4.69,1.16,2.66,6.21,9.0,9.67,6.68,12.72,18.1,17.23,13.46,16.45,17.16,17.75,15.45,12.8,2.92,2.71,-0.78,1.98,-4.58,-6.86,-4.05,-4.72,-0.76,2.04,-0.23,1.13,6.92,14.67,17.2,10.58,7.09,8.09,9.71,5.03,-0.6,-4.33,-6.11,-5.09,2.77,3.11,3.73,3.4,12.74,17.92,22.92,22.7,25.27,15.68,24.07]
+  },
+  'panel-tv32':{
+    name:'32吋TV面板月度均价',
+    unit:'美元',src:'TrendForce / WitsView',freq:'月度',
+    srcUrl:'https://www.trendforce.com/analysis/displaypanel/',
+    bull:'连续3个月环比上涨→面板景气拐点，A股面板股弹性极大',
+    bear:'价格持续下跌→供过于求，面板厂盈利承压',
+    logic:'32吋TV面板价格是显示面板行业景气的最直接代理指标，价格趋势领先面板厂毛利率约1-2个季度',
+    dates:['24-01','24-02','24-03','24-04','24-05','24-06','24-07','24-08','24-09','24-10','24-11','24-12','25-01','25-02','25-03','25-04','25-05','25-06','25-07','25-08','25-09','25-10','25-11','25-12'],
+    values:[52,53,55,57,58,57,56,54,53,52,51,52,54,55,57,59,61,63,65,64,62,61,62,63]
+  },
+  /* ── AI算力链 ── */
+  'nv-dc-rev':{
+    name:'英伟达数据中心营收（GPU需求proxy）',
+    unit:'亿美元',src:'英伟达财报',freq:'季度',
+    srcUrl:'https://investor.nvidia.com/financial-information/quarterly-results/default.aspx',
+    bull:'数据中心营收同比>50%→GPU出货旺盛，光模块/液冷/AI PCB受益',
+    bear:'环比负增长且连续→算力景气降温，谨慎高估值算力标的',
+    logic:'英伟达Compute&Networking/Data Center营收是GPU算力需求最直接财务指标，领先A股产业链约1个季度',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26Q1'],
+    values:[37,38,38,47,36,103,141,184,226,263,308,356,392,450,490,540,600]
+  },
+  'optical-800g-pct':{
+    name:'800G及以上光模块出货占比',
+    unit:'%',src:'TrendForce/LightCounting（估算）',freq:'半年',
+    srcUrl:'https://www.trendforce.com/',
+    bull:'800G占比快速提升→ASP提升驱动光模块量价双升',
+    bear:'1.6T切换节奏迟缓→高速升级预期落空，谨慎高估值光模块股',
+    logic:'TrendForce数据：2024年19.5%→2026年超60%，代际切换（400G→800G→1.6T）是光模块量价双升的核心逻辑',
+    dates:['23H1','23H2','24H1','24H2','25H1','25H2','26H1'],
+    values:[5.2,12.8,19.5,32.1,45.8,58.3,65.2]
+  },
+  'txc-revyoy':{
+    name:'中际旭创/天孚通信单季营收同比增速（示例）',
+    unit:'%',src:'iFinD股票财报（需更新）',freq:'季度',
+    srcUrl:'https://emweb.securities.eastmoney.com/PC_HSF10/Finance/Index?type=web&code=SZ300308',
+    bull:'营收同比>50%且加速→光模块景气超预期，A股光模块股强势',
+    bear:'营收增速回落至个位数→景气放缓，估值承压',
+    logic:'中际旭创(300308)和天孚通信(300394)是A股光模块/光器件龙头，营收增速是AI算力需求传导光模块的验证。注：以下为示意数据，请在iFinD中验证最新财务数据',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4'],
+    values:[12,18,22,15,8,25,85,120,143,98,112,85,72,65,80,95]
+  },
+  'yingweike-order':{
+    name:'英维克/申菱环境合同负债同比增速（示例）',
+    unit:'%',src:'iFinD股票财报（需更新）',freq:'季度',
+    srcUrl:'https://emweb.securities.eastmoney.com/PC_HSF10/Finance/Index?type=web&code=SZ002837',
+    bull:'合同负债YoY>50%→液冷订单景气验证',
+    bear:'合同负债绝对值下降→订单下滑预警',
+    logic:'英维克(002837)/申菱环境(301018)合同负债同比是液冷散热订单景气的最直接验证指标。注：以下为示意数据',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4'],
+    values:[8,12,18,25,20,35,48,72,85,120,145,168,185,210,240,280]
+  },
+  /* ── 半导体 ── */
+  'semi-inv-days':{
+    name:'全球主要半导体公司库存天数（DSI）',
+    unit:'天',src:'Bloomberg/公司财报测算（示例）',freq:'季度',
+    srcUrl:'https://en.macromicro.me/collections/4345/mm-semiconductor/35179/worldwide-semiconductor-companys-days-sales-of-inventory',
+    bull:'<70天=低库存补库→买入半导体信号',
+    bear:'>100天=高库存去库→谨慎半导体行情',
+    logic:'半导体库存周期约1.5-2年，库存天数是判断周期位置最核心指标；>100天历史上往往对应股价低点，<60天对应高点',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26Q1'],
+    values:[72,82,98,115,128,122,112,98,88,82,78,74,70,68,66,65,63]
+  },
+  'bfc-order':{
+    name:'北方华创/中微公司合同负债同比增速（示例）',
+    unit:'%',src:'iFinD股票财报（需更新）',freq:'季度',
+    srcUrl:'https://emweb.securities.eastmoney.com/PC_HSF10/Finance/Index?type=web&code=SZ002371',
+    bull:'合同负债YoY>30%→在手订单饱满，国产设备景气确认',
+    bear:'合同负债增速回落→订单增长放缓，谨慎设备股',
+    logic:'北方华创(002371)/中微公司(688012)合同负债同比是国产半导体设备景气的最直接领先指标。注：以下为示意数据',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4'],
+    values:[45,62,78,95,105,122,134,148,155,162,145,138,142,158,172,185]
+  },
+  /* ── 通信/光通信 ── */
+  'optic-cable-bid':{
+    name:'三大运营商年度光缆集采量（万芯公里）',
+    unit:'万芯公里',src:'运营商集采公告（示例）',freq:'年（Q1-Q2集中）',
+    srcUrl:'https://b2b.10086.cn/qyyfw/bidinf/stdBidResult.html',
+    bull:'总量>4000万芯公里=超预期，光缆板块大涨',
+    bear:'总量<2500万芯公里=景气下行，长飞/亨通等承压',
+    logic:'运营商年度光缆集采量是光纤光缆行业最重要单一指标，中移动通常占全年量的约60%，Q1-Q2集中招标',
+    dates:['2018','2019','2020','2021','2022','2023','2024','2025E','2026E'],
+    values:[6000,5000,4200,3800,2800,2500,3200,3800,4200]
+  },
+  'rf-guidance':{
+    name:'Qorvo/Skyworks季度收入指引合计',
+    unit:'亿美元',src:'美股季报（示例）',freq:'季度',
+    srcUrl:'https://ir.qorvo.com/',
+    bull:'指引上调→全球手机景气向好，射频前端受益',
+    bear:'指引下调→库存去化仍未结束，谨慎射频',
+    logic:'Qorvo+Skyworks是全球射频前端双寡头，指引超预期是射频前端最确定催化剂。注：以下为合计营收示意，非严格口径',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26Q1'],
+    values:[10.8,10.2,9.5,9.1,8.5,8.2,8.8,9.2,9.8,10.1,10.5,10.8,11.2,11.5,11.8,12.1,12.5]
+  },
+  /* ── AI算力链：补充指标 ── */
+  'optical-leadtime':{
+    name:'800G光模块交货周期（估算）',
+    unit:'周',src:'LightCounting/产业调研综合（估算）',freq:'季度',
+    srcUrl:'https://www.lightcounting.com/',
+    bull:'>20周→供不应求，光模块股正弹性；中际旭创/新易盛订单饱满',
+    bear:'<10周→供需平衡，谨慎高估值',
+    logic:'800G光模块交货周期是供需最直接体现：AI算力需求爆发时期交货周期从正常12周拉长至24周以上；随产能扩张周期逐步压缩。非官方连续时序，综合产业调研估算',
+    dates:['23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26Q1'],
+    values:[12,14,22,28,26,20,16,14,16,18,14,12,14]
+  },
+  'optical-chip-local':{
+    name:'国内光芯片自给率（25G以上，估算）',
+    unit:'%',src:'ICC/LightCounting/卖方研报综合（估算）',freq:'年度',
+    srcUrl:'https://www.lightcounting.com/',
+    bull:'自给率快速提升→国产光芯片厂商（源杰/仕佳/云岭）份额扩张',
+    bear:'高速率国产化进展迟缓→先进制程光芯片仍依赖进口',
+    logic:'低速(<10G)光芯片国产化率>80%；25G约20%；高速(100G+)不足5%。出口管制叠加AI需求爆发，高速国产化是近年最确定方向。注：行业口径估算，不同来源有差异',
+    dates:['2019','2020','2021','2022','2023','2024','2025E'],
+    values:[3,5,8,12,18,25,35]
+  },
+  'liquid-cool-pct':{
+    name:'AI数据中心液冷渗透率（估算）',
+    unit:'%',src:'TrendForce公开预测/IDC（估算）',freq:'半年',
+    srcUrl:'https://www.trendforce.com/',
+    bull:'>30%且加速→英维克/申菱/曙光数创进入爆发期',
+    bear:'渗透率低于预期→液冷成本/改造难度制约，冷板仍主导',
+    logic:'TrendForce：AI数据中心液冷渗透率2024年14%→2025年33%，主因GB200/Blackwell Ultra等高功耗GPU（700W+）强制推动冷板液冷；浸没式2026年起提速',
+    dates:['2022','2023H1','2023','2024H1','2024','2025H1','2025E','2026E'],
+    values:[1,3,5,8,14,22,33,48]
+  },
+  'gpu-server-ship':{
+    name:'AI服务器出货占总服务器比例（估算）',
+    unit:'%',src:'IDC/TrendForce公开报告（估算）',freq:'季度',
+    srcUrl:'https://www.idc.com/',
+    bull:'>25%且加速→AI服务器供应链（光模块/液冷/HBM）高速成长',
+    bear:'占比环比下滑→算力需求阶段性降速',
+    logic:'AI服务器（含GPU服务器/加速卡服务器）出货量占整体服务器比例；2023年需求爆发推动比例快速提升；GB200系统放量进一步提升价值占比',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26Q1'],
+    values:[2.1,2.3,2.5,2.8,3.5,5.8,9.2,12.5,15.3,18.7,22.1,25.4,28.6,31.2,33.5,35.8,38.2]
+  },
+  'idc-utilization':{
+    name:'上市IDC公司平均上架率（综合）',
+    unit:'%',src:'奥飞数据/数据港/光环新网等公司年报（估算）',freq:'季度',
+    srcUrl:'https://emweb.securities.eastmoney.com/PC_HSF10/Finance/Index?type=web&code=SZ300738',
+    bull:'>70%且新项目快速消化→供需偏紧，IDC价格有望上行',
+    bear:'上架率下滑→IDC供过于求，价格竞争加剧',
+    logic:'综合A股主要IDC公司（奥飞数据/数据港/光环新网/宝信软件）机柜上架率/利用率；AI算力需求拉动传统IDC，但新增AI算力数据中心因建设周期和能耗限制消化节奏不同',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4'],
+    values:[58,59,61,62,63,65,66,68,70,71,73,74,75,76,77,78]
+  },
+  'cn-npu-ship':{
+    name:'国产AI芯片季度出货量（昇腾+寒武纪，估算）',
+    unit:'万片',src:'IDC/Omdia/卖方研报（估算）',freq:'季度',
+    srcUrl:'https://emweb.securities.eastmoney.com/PC_HSF10/Finance/Index?type=web&code=SH688256',
+    bull:'季度环比>20%→国产替代加速，昇腾产业链（浪潮/服务器ODM）受益',
+    bear:'出货量低于预期→良率/软件生态制约，国产化进度放缓',
+    logic:'综合华为昇腾（服务器厂商出货推算）和寒武纪（上市公司财报验证）AI训练/推理芯片季度出货量；为第三方估算，华为昇腾不单独披露出货量，主要参考服务器端线索',
+    dates:['23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4','26Q1'],
+    values:[5,8,15,28,45,62,85,110,138,162,185,210,245]
+  },
+  'cn-gpu-price':{
+    name:'国产AI算力卡招投标折算单P价格（估算）',
+    unit:'万元/P',src:'政府采购网/中标公告整理（估算）',freq:'季度',
+    srcUrl:'https://search.ccgp.gov.cn/bxsearch?searchtype=1&kw=%E6%99%BA%E7%AE%97%E4%B8%AD%E5%BF%83',
+    bull:'单P价格下降→国产算力性价比提升，采购规模扩大',
+    bear:'价格高企→国产化成本劣势明显，需求限于政策驱动',
+    logic:'从政府采购/智算中心中标公告中提取GPU集群/AI服务器总价，结合配置折算每P算力单价；单P价格下降是国产算力从政策驱动走向市场驱动的关键里程碑',
+    dates:['23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4'],
+    values:[35,32,28,25,22,20,18,16,15,14,13,12]
+  },
+  'gpu-cloud-price':{
+    name:'H100/A100 GPU云服务器按量付费价（元/卡/小时）',
+    unit:'元/卡/小时',src:'阿里云/腾讯云/华为云价格页（估算）',freq:'季度',
+    srcUrl:'https://www.alibabacloud.com/zh/product/gpu',
+    bull:'云价格上涨→算力供给偏紧，IDC/算力租赁企业受益',
+    bear:'云价格持续下跌→供过于求，谨慎算力租赁商',
+    logic:'以A100 80G 8卡实例/H800 8卡实例的按量计费为基准；不同厂商/地域/规格差异显著，仅供趋势参考；不含华为云昇腾实例价格（口径不同）',
+    dates:['23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4'],
+    values:[28,26,24,22,20,18,17,16,15,14,13,12]
+  },
+  /* ── 半导体：补充指标 ── */
+  'fabless-inv':{
+    name:'A股芯片设计公司平均存货周转天数（估算）',
+    unit:'天',src:'iFinD A股财务数据（韦尔/圣邦/思瑞浦/澜起等）',freq:'季度',
+    srcUrl:'https://emweb.securities.eastmoney.com/PC_HSF10/Finance/Index?type=web&code=SH603501',
+    bull:'<90天且持续下降→渠道去库存完成，芯片设计进入补库',
+    bear:'>130天→渠道库存高企，芯片设计业绩承压',
+    logic:'A股主要芯片设计公司（韦尔股份/圣邦/思瑞浦/澜起科技/卓胜微等）加权平均存货周转天数；比全球DSI更及时反映国内渠道状态；结合下游终端（手机/PC/汽车）出货同步判断',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4'],
+    values:[95,118,145,162,155,142,128,112,102,95,88,82,80,82,85,88]
+  },
+  'semi-equip-capex':{
+    name:'全球晶圆厂半导体设备支出（年度）',
+    unit:'亿美元',src:'SEMI World Fab Forecast（估算）',freq:'年度',
+    srcUrl:'https://www.semi.org/en/products-services/market-data/fab',
+    bull:'设备支出同比>15%→景气上行，北方华创/中微订单前景好',
+    bear:'设备支出同比下滑→晶圆厂扩产缩减，设备/材料谨慎',
+    logic:'全球晶圆厂资本开支（设备部分）是设备行业最根本需求来源；中国大陆份额从2019年15%提升至2024年25%+，且本土设备替代比例持续提升',
+    dates:['2019','2020','2021','2022','2023','2024','2025E','2026E'],
+    values:[578,675,1007,975,800,1020,1100,1180]
+  },
+  'local-rate-semi':{
+    name:'国产半导体设备渗透率（整体，估算）',
+    unit:'%',src:'SEMI中国/卖方研报综合（估算）',freq:'年度',
+    srcUrl:'https://china.semi.org.cn/news',
+    bull:'渗透率快速提升→北方华创/中微/盛美等持续获得份额',
+    bear:'进展低于预期→技术难关或验证进度慢',
+    logic:'国内晶圆厂采购的设备中本土供应商金额占比（估算）。2019年仅约3%，随制裁加剧国产替代显著提速；刻蚀/薄膜/清洗/热处理进展快，光刻/量测仍是瓶颈',
+    dates:['2019','2020','2021','2022','2023','2024','2025E'],
+    values:[3,5,8,10,14,18,22]
+  },
+  'sic-price':{
+    name:'SiC 6英寸导电型基板价格（估算）',
+    unit:'美元/片',src:'TrendForce/Yole/公司公告（估算）',freq:'半年',
+    srcUrl:'https://www.trendforce.com/',
+    bull:'价格快速下降→SiC渗透率加速提升，功率半导体景气改善',
+    bear:'降价不及预期→成本劣势制约SiC车规渗透',
+    logic:'SiC基板约占SiC功率器件成本35-45%，基板价格下降是整体方案cost down的核心路径；8英寸化推进进一步降本。Wolfspeed/Coherent/天岳先进/天科合达为主要供应商',
+    dates:['2020','2021','2022','2023H1','2023','2024H1','2024','2025H1','2025E'],
+    values:[1800,1650,1400,1200,1050,900,780,680,600]
+  },
+  'photoresist-price':{
+    name:'半导体KrF光刻胶价格指数（估算）',
+    unit:'指数（2022Q1=100）',src:'百川盈孚/公司毛利率反推（估算）',freq:'季度',
+    srcUrl:'https://www.baiinfo.com/hangqing/chemicals/',
+    bull:'价格企稳或反弹→光刻胶去产能完成，彤程/晶瑞受益',
+    bear:'持续下跌→国内产能过剩压制盈利',
+    logic:'半导体KrF光刻胶（主要用于成熟制程）价格趋势；国内产能快速扩张导致2023-2024年价格持续承压；ArF和EUV光刻胶国产化率仍极低，高端品类价格相对稳定',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3'],
+    values:[105,103,100,97,93,88,83,79,76,74,72,71,72,74,76]
+  },
+  'wafer-local-rate':{
+    name:'国内晶圆厂本土设备采购率（估算）',
+    unit:'%',src:'公开招投标/卖方研报（估算）',freq:'年度',
+    srcUrl:'https://search.ccgp.gov.cn/bxsearch?searchtype=1&kw=%E6%99%B6%E5%9C%86%E8%AE%BE%E5%A4%87',
+    bull:'>25%且加速→国产化超预期，设备股有估值提升',
+    bear:'提升低于预期→先进制程瓶颈制约',
+    logic:'国内主要晶圆厂（中芯国际/华虹/长江存储/合肥长鑫等）采购设备中国内厂商供应金额占比；与设备渗透率相近但更强调晶圆厂实际采购口径',
+    dates:['2020','2021','2022','2023','2024','2025E'],
+    values:[5,7,9,12,17,22]
+  },
+  'mlcc-per-unit':{
+    name:'MLCC单车用量（新能源车行业均值）',
+    unit:'颗/辆',src:'村田/TDK公开技术资料/卖方研报（估算）',freq:'年度',
+    srcUrl:'https://www.murata.com/en-us/products/capacitor/mlcc',
+    bull:'单车用量提升叠加新能源车放量→MLCC需求结构性增长',
+    bear:'国产替代压价→日系厂商价格弹性受压',
+    logic:'燃油车约3000颗→普通BEV约6000颗→高阶智驾BEV约10000颗+；随L2/L3辅助驾驶渗透提升，单车MLCC价值量持续升级；中国新能源车MLCC以日韩和国产为主',
+    dates:['2019','2020','2021','2022','2023','2024','2025E'],
+    values:[3200,3500,4200,5500,6800,8200,9500]
+  },
+  /* ── 通信/光通信：补充指标 ── */
+  'optic-cable-price':{
+    name:'运营商光缆集采均价（元/芯公里，估算）',
+    unit:'元/芯公里',src:'三大运营商集采公告整理（估算）',freq:'年度（集采）',
+    srcUrl:'https://b2b.10086.cn/qyyfw/bidinf/stdBidResult.html',
+    bull:'均价企稳或回升→光缆行业盈利修复，长飞/亨通估值修复',
+    bear:'均价持续下降→价格战激烈，毛利率承压',
+    logic:'三大运营商年度光缆集采中标均价；2019年以来长期下跌反映行业竞争激烈，2025-2026年随供需改善和预制棒价格上涨出现反弹；反弹是行业景气核心催化',
+    dates:['2017','2018','2019','2020','2021','2022','2023','2024','2025E'],
+    values:[200,120,80,68,62,58,55,60,72]
+  },
+  'fiber-preform-price':{
+    name:'G.652.D裸光纤参考价格（元/公里，估算）',
+    unit:'元/公里',src:'CRU/运营商集采/产业报道综合（估算）',freq:'月度',
+    srcUrl:'https://www.crugroup.com/knowledge-and-analysis/industries/fibresandwire/',
+    bull:'光纤价格上涨→长飞/亨通/中天毛利率改善，强烈正弹性',
+    bear:'价格回落→需求放缓或供给增加',
+    logic:'CRU数据显示2025年11月至2026年1月中国G.652.D裸光纤涨幅超80%，主因高端A2类光纤预制棒产能紧张（长飞/亨通/烽火预制棒产能利用率超110%），叠加全球光缆需求强劲（AI数据中心+运营商集采）',
+    dates:['24-01','24-03','24-05','24-07','24-09','24-11','25-01','25-03','25-05','25-07','25-09','25-11','26-01','26-03','26-05'],
+    values:[38,39,40,41,42,44,54,68,78,83,86,90,96,100,98]
+  },
+  'submarine-cable':{
+    name:'国际海缆新项目中标/开工数量（估算）',
+    unit:'个',src:'SubmarineNetworks/TeleGeography/产业新闻（估算）',freq:'年度',
+    srcUrl:'https://www.submarinenetworks.com/networks',
+    bull:'中标数量增加→华海通信/中天科技等A股海缆公司订单景气',
+    bear:'海缆订单低于预期→国际资本支出放缓',
+    logic:'全球新签/开工国际海底光缆系统数量；AI时代跨洋数据流量爆发推动大型科技公司自建海缆（Meta/Google/微软）；中国海缆企业参与率提升是长期增量逻辑',
+    dates:['2018','2019','2020','2021','2022','2023','2024','2025E'],
+    values:[12,15,18,22,20,25,32,38]
+  },
+  'fiber-competition':{
+    name:'中移动光缆集采CR4份额（前四厂商合计）',
+    unit:'%',src:'中国移动集采中标公告整理（估算）',freq:'年度（集采）',
+    srcUrl:'https://b2b.10086.cn/qyyfw/bidinf/stdBidResult.html',
+    bull:'CR4提升→行业集中度提高，龙头定价权改善',
+    bear:'CR4下降或新进入者扰动→价格战加剧',
+    logic:'中国移动年度光缆集采中标前4家厂商（通常为长飞/亨通/中天/烽火）合计份额；CRU数据显示2025/2026年中移集采前四家合计约60%；集中度提升有利于行业定价改善',
+    dates:['2018','2019','2020','2021','2022','2023','2024','2025E'],
+    values:[48,50,52,55,54,57,60,62]
+  },
+  'zhuosheng-share':{
+    name:'卓胜微A股射频前端市场份额（估算）',
+    unit:'%',src:'Yole/Counterpoint/卓胜微年报（估算）',freq:'年度',
+    srcUrl:'https://emweb.securities.eastmoney.com/PC_HSF10/Finance/Index?type=web&code=SZ300782',
+    bull:'市场份额持续提升→国产射频替代加速，中高端SAW/BAW突破',
+    bear:'国产化低于预期→高频段BAW国产化壁垒仍高',
+    logic:'卓胜微是国内射频前端领军，已占中国4G/5G手机中低频段SAW约20-25%份额；BAW和高频段SAW仍以Qorvo/Skyworks/村田主导；国产化率提升是长期确定逻辑',
+    dates:['2019','2020','2021','2022','2023','2024'],
+    values:[3,5,8,12,16,20]
+  },
+  /* ── AI算力链：补充指标（其余） ── */
+  'txc-contract':{
+    name:'中际旭创/天孚通信合同负债同比增速（示例）',
+    unit:'%',src:'iFinD股票财报（需更新）',freq:'季度',
+    srcUrl:'https://emweb.securities.eastmoney.com/PC_HSF10/Finance/Index?type=web&code=SZ300308',
+    bull:'合同负债YoY>60%→在手光模块订单饱满，营收增长确定性高',
+    bear:'合同负债下降→订单明显放缓，景气可能转折',
+    logic:'合同负债是预收货款，反映已签约但未交付订单，是营收的领先6-9个月指标。中际旭创(002831)/天孚通信(300394)合同负债同比高速增长是AI算力需求持续旺盛的关键验证。注：以下为示意数据',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4'],
+    values:[5,8,15,22,18,42,95,145,178,210,245,268,285,310,335,360]
+  },
+  'dc-pue':{
+    name:'国内AI数据中心平均PUE值（估算）',
+    unit:'PUE',src:'工信部/CDCC/数据中心行业报告（估算）',freq:'年度',
+    srcUrl:'https://www.miit.gov.cn/jgsj/yxj/index.html',
+    bull:'PUE持续下降→液冷/节能方案渗透率提升，能效改善验证',
+    bear:'PUE下降停滞→技术路径切换困难，绿色数据中心进展缓慢',
+    logic:'PUE（电力使用效率）越低代表能效越高（1.0为理论最优）；工信部要求新建数据中心PUE≤1.3，老旧数据中心≤1.5；AI算力数据中心功耗密度显著更高，液冷技术是PUE持续下降的核心驱动力',
+    dates:['2018','2019','2020','2021','2022','2023','2024','2025E'],
+    values:[1.65,1.60,1.55,1.49,1.45,1.42,1.38,1.35]
+  },
+  'cdu-price':{
+    name:'液冷CDU机组标准报价（估算）',
+    unit:'万元/套',src:'英维克/申菱/曙光/产业调研（估算）',freq:'季度',
+    srcUrl:'https://emweb.securities.eastmoney.com/PC_HSF10/Finance/Index?type=web&code=SZ002837',
+    bull:'CDU单价稳定且出货量提升→液冷单元放量，英维克/申菱受益',
+    bear:'CDU价格快速下降→竞争白热化，毛利率承压',
+    logic:'液冷CDU（Coolant Distribution Unit）是数据中心液冷系统核心设备，标准冷板液冷CDU单套报价40-80万元；随量产规模扩大和竞争加剧有降价趋势；监控CDU单价趋势可判断竞争格局',
+    dates:['23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4'],
+    values:[75,72,68,65,62,58,55,52,50,48,46,45]
+  },
+  'cool-bid-count':{
+    name:'互联网大厂/运营商液冷数据中心中标数量（估算）',
+    unit:'个',src:'政府采购网/中标公告整理（估算）',freq:'季度',
+    srcUrl:'https://search.ccgp.gov.cn/bxsearch?searchtype=1&kw=%E6%B6%B2%E5%86%B7%E6%95%B0%E6%8D%AE%E4%B8%AD%E5%BF%83',
+    bull:'中标数量季度环比明显增加→液冷需求加速，板块催化剂',
+    bear:'中标增速回落→液冷景气放缓，谨慎液冷个股',
+    logic:'统计国内互联网（BAT/华为/字节）及运营商、央企智算中心液冷/冷板液冷系统招投标数量；为不完全统计，主要追踪趋势方向，绝对值仅供参考',
+    dates:['23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3','25Q4'],
+    values:[8,12,18,25,32,45,58,72,85,102,120,138]
+  },
+  /* ── 半导体：补充指标（其余） ── */
+  'downstream-ship':{
+    name:'PC+平板+手机全球合计季度出货量（估算）',
+    unit:'百万台',src:'IDC/Canalys/Gartner综合（估算）',freq:'季度',
+    srcUrl:'https://www.idc.com/',
+    bull:'合计出货同比正增长连续两季→消费电子复苏，存储/DRAM/NAND全线受益',
+    bear:'持续负增长→消费电子需求低迷，库存去化压力',
+    logic:'手机+PC+平板合计出货量是消费类半导体最大需求来源（占半导体需求约40%）；复苏验证是芯片设计/存储/射频全产业链景气的前提条件',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3'],
+    values:[455,423,438,452,400,418,468,458,415,432,482,468,425,445,490]
+  },
+  'mlcc-jp-price':{
+    name:'日系MLCC 0402/0201规格交货价格指数（估算）',
+    unit:'指数（2022Q1=100）',src:'村田/TDK/太阳诱电季报+DigiKey价格（估算）',freq:'季度',
+    srcUrl:'https://www.murata.com/en-us/products/capacitor/mlcc',
+    bull:'价格企稳或上涨→需求改善，MLCC供需趋紧，风华高科/国巨受益',
+    bear:'价格持续下降→去库存中，需求弱势',
+    logic:'日系MLCC厂商（村田/TDK/太阳诱电）标准规格（0402/0201）交货价格综合指数；2022年价格高位后2023年持续下跌，2024年底随手机/汽车需求回暖开始企稳；国产MLCC（风华高科/宇阳）以价格竞争为主，价格分化显著',
+    dates:['22Q1','22Q2','22Q3','22Q4','23Q1','23Q2','23Q3','23Q4','24Q1','24Q2','24Q3','24Q4','25Q1','25Q2','25Q3'],
+    values:[105,103,100,96,90,84,79,75,73,72,73,75,78,82,86]
+  }
+};
+
+/* ── Modal逻辑 ── */
+let _currentId='', _chartInst=null;
+
+document.addEventListener('click',function(e){
+  const item=e.target.closest('.ind-item');
+  if(item && !e.target.closest('.modal-overlay')) openModal(item);
+});
+
+function openModal(item){
+  const name=item.querySelector('.ind-name').textContent.trim();
+  const srcEl=item.querySelector('.tag-src');
+  const freqEl=item.querySelector('.tag-freq');
+  const src=srcEl?srcEl.textContent:'';
+  const freq=freqEl?freqEl.textContent:'';
+  const indId=item.dataset.indid||'';
+  _currentId=indId;
+
+  document.getElementById('modalTitle').textContent=name;
+  document.getElementById('modalSrc').textContent='来源：'+src;
+  document.getElementById('modalFreq').textContent='频率：'+freq;
+
+  const data=moduleData[indId]||indicatorData[indId]||null;
+  document.getElementById('modalUpdate').textContent=data?'含历史数据':'暂无历史数据（待对接）';
+
+  const srcLinkEl=document.getElementById('modalSrcLink');
+  if(data&&data.srcUrl){
+    srcLinkEl.href=data.srcUrl;
+    srcLinkEl.style.display='';
+  } else {
+    srcLinkEl.style.display='none';
+  }
+
+  const infoCard=document.getElementById('modalInfoCard');
+  if(data){
+    document.getElementById('modalBull').textContent=data.bull||'—';
+    document.getElementById('modalBear').textContent=data.bear||'—';
+    document.getElementById('modalLogic').textContent=data.logic||'—';
+    infoCard.style.display='block';
+  } else {
+    infoCard.style.display='none';
+  }
+
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow='hidden';
+
+  setRange('all');
+}
+
+function closeModal(){
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow='';
+  if(_chartInst){_chartInst.dispose();_chartInst=null;}
+}
+
+function setRange(range){
+  document.querySelectorAll('.time-btn').forEach(b=>b.classList.remove('active'));
+  const btnMap={'6m':0,'1y':1,'3y':2,'all':3};
+  document.querySelectorAll('.time-btn')[btnMap[range]].classList.add('active');
+
+  const data=moduleData[_currentId]||indicatorData[_currentId]||null;
+  const box=document.getElementById('chart-box');
+
+  if(!data){
+    box.innerHTML='';
+    box.outerHTML; // force reset
+    document.getElementById('chart-box').style.display='none';
+    const nb=document.createElement('div');
+    nb.className='no-data-box';
+    nb.id='chart-box';
+    nb.innerHTML=`<div class="nd-icon">📭</div>
+      <div class="nd-title">数据待录入</div>
+      <div class="nd-hint">后续逐步对接数据源后将显示历史图表</div>`;
+    document.querySelector('.modal-body').insertBefore(nb, document.querySelector('.time-range-btns').nextSibling);
+    return;
+  }
+
+  const freqN={'日':244,'周':52,'月度':12,'季度':4};
+  const baseN=freqN[data.freq]||4;
+  const n=range==='6m'?Math.round(baseN/2):range==='1y'?baseN:range==='3y'?baseN*3:9999;
+  const start=Math.max(0,data.dates.length-n);
+  const dates=data.dates.slice(start);
+  const values=data.values.slice(start);
+
+  if(_chartInst){_chartInst.dispose();_chartInst=null;}
+
+  let el=document.getElementById('chart-box');
+  if(el.classList.contains('no-data-box')){
+    const nd=document.createElement('div');
+    nd.id='chart-box';
+    el.parentNode.replaceChild(nd,el);
+    el=nd;
+  }
+  el.style.display='';
+  el.style.width='100%';
+  el.style.height='420px';
+
+  _chartInst=echarts.init(el,'dark',{renderer:'canvas'});
+  const opt={
+    backgroundColor:'transparent',
+    tooltip:{
+      trigger:'axis',
+      backgroundColor:'#1a1d2e',
+      borderColor:'#2e3250',
+      textStyle:{color:'#e2e8f0',fontSize:12},
+      formatter:function(p){
+        const v=p[0];
+        return `<div style="font-size:12px;line-height:1.8">${v.name}<br/><strong style="color:#818cf8">${v.value} ${data.unit}</strong></div>`;
+      }
+    },
+    grid:{left:70,right:24,top:24,bottom:48},
+    xAxis:{type:'category',data:dates,axisLabel:{color:'#64748b',fontSize:11,rotate:dates.length>12?30:0},axisLine:{lineStyle:{color:'#2e3250'}},axisTick:{show:false}},
+    yAxis:{type:'value',name:data.unit,nameTextStyle:{color:'#64748b',fontSize:11},axisLabel:{color:'#64748b',fontSize:11},splitLine:{lineStyle:{color:'#1e2235'}},axisLine:{show:false}},
+    series:[{
+      data:values,type:'line',smooth:true,
+      symbol:'circle',symbolSize:5,
+      lineStyle:{color:'#6366f1',width:2.5},
+      itemStyle:{color:'#6366f1',borderWidth:2,borderColor:'#818cf8'},
+      areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[{offset:0,color:'rgba(99,102,241,.35)'},{offset:1,color:'rgba(99,102,241,.02)'}]}}
+    }]
+  };
+  _chartInst.setOption(opt);
+  window.addEventListener('resize',()=>{_chartInst&&_chartInst.resize();});
+}
+
+/* ── 迷你预览图初始化 ── */
+const _sparkInsts={};
+function initSparklines(){
+  ['tmt-share','tmt-share-pct','tmt-turnover-ratio','tmt-turnover-pct','tmt-excess'].forEach(id=>{
+    const el=document.getElementById('spark-'+id);
+    if(!el||_sparkInsts[id]) return;
+    const d=indicatorData[id];
+    if(!d||!d.dates||d.dates.length===0) return;
+    const freqN={'日':244,'周':52,'月度':12,'季度':4};
+    const n=Math.min(d.values.length, freqN[d.freq]||52);
+    const vals=d.values.slice(-n);
+    const isUp=vals[vals.length-1]>=vals[0];
+    const col=isUp?'#10b981':'#ef4444';
+    const chart=echarts.init(el,null,{renderer:'svg'});
+    chart.setOption({
+      animation:false,
+      grid:{top:3,bottom:3,left:3,right:3},
+      xAxis:{type:'category',show:false,data:d.dates.slice(-n)},
+      yAxis:{type:'value',show:false,scale:true},
+      series:[{type:'line',data:vals,smooth:true,
+        lineStyle:{width:1.5,color:col},
+        itemStyle:{opacity:0},
+        areaStyle:{color:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[
+          {offset:0,color:isUp?'rgba(16,185,129,.35)':'rgba(239,68,68,.35)'},
+          {offset:1,color:'rgba(0,0,0,0)'}
+        ]}},
+        symbol:'none'
+      }]
+    });
+    _sparkInsts[id]=chart;
+  });
+}
+
+/* ── 无数据红点标注 ── */
+function markNoDataItems(){
+  document.querySelectorAll('.ind-item[data-indid]').forEach(function(item){
+    var id=item.dataset.indid;
+    if(!(moduleData[id]||indicatorData[id])){
+      item.classList.add('no-data');
+    }
+  });
+}
+
+/* ── 初始化日历（若默认显示则渲染）── */
+document.addEventListener('DOMContentLoaded',function(){
+  setTimeout(initSparklines,100);
+  markNoDataItems();
+});
+
+/* ════════════════════════════════════════════════
+   四大子行业景气数据仪表盘
+   数据来源：iFinD EDB（国家统计局/工信部）
+   最后更新：2026-06-24
+   ════════════════════════════════════════════════ */
+const sub4Data = {
+  updated: '2026-06-24',
+  ic_yoy: {
+    dates:["2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-03","2026-04","2026-05"],
+    values:[-5.1,-12.1,-10.4,-10.4,-16.6,-24.7,-16.4,-26.7,-15.2,-7.1,-3.0,3.8,4.2,4.0,4.1,21.1,13.9,34.5,27.9,34.0,28.4,31.9,17.3,12.8,26.9,17.8,17.9,11.8,8.7,12.5,6.7,2.8,5.7,11.1,10.5,13.2,17.2,17.7,15.6,12.9,20.6,22.1,22.9]
+  },
+  global_semi_yoy: {
+    dates:["2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04"],
+    values:[-20.1,-24.1,-19.5,-20.2,-21.0,-6.1,-7.2,-7.0,0.4,4.8,11.4,18.7,18.2,17.4,18.6,17.0,22.9,16.2,18.6,28.5,23.7,16.0,22.8,15.9,14.7,20.6,18.7,23.1,18.7,18.7,27.0,22.8,28.1,33.2,38.9,42.7,59.1,87.8,88.1,106.3]
+  },
+  phone_ship_yoy: {
+    dates:["2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04"],
+    values:[-17.7,-31.7,-40.5,-34.2,-9.4,9.2,-30.6,-21.9,-2.4,-27.5,-34.1,-16.6,-42.8,43.0,5.4,3.4,25.2,-20.9,-6.8,0.03,59.0,19.7,34.3,1.5,68.1,-32.9,-5.5,28.8,16.5,12.5,30.5,26.7,-23.8,1.8,-5.1,22.1,-14.3,37.9,6.5,4.0,-21.8,-9.3,16.1,-6.0,10.1,8.7,1.9,-29.1,-16.1,-14.6,-7.1,2.8]
+  },
+  elec_indpro_yoy: {
+    dates:["2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-03","2026-04","2026-05"],
+    values:[12.5,4.9,7.3,11.0,7.3,5.5,10.6,9.4,-1.1,1.1,1.2,1.8,0.0,1.2,0.7,5.8,4.5,4.8,10.6,9.6,10.6,15.6,14.5,11.3,14.3,11.3,10.6,10.5,9.3,8.7,13.1,10.8,10.2,11.0,10.2,9.9,11.3,8.9,9.2,11.8,12.5,15.6,17.0]
+  },
+  five_g: {
+    dates:["2022-Q1","2022-Q2","2022-Q3","2022-Q4","2023-Q1","2023-Q2","2023-Q3","2023-Q4","2024-Q1","2024-Q2","2024-Q3","2024-Q4","2025-Q1","2025-Q2","2025-Q3","2025-Q4","2026-Q1"],
+    values:[1559000.0,1854000.0,2220000.0,2312000.0,2646000.0,2937000.0,3189000.0,3377000.0,3647000.0,3917000.0,4089000.0,4251000.0,4395000.0,4549000.0,4705000.0,4838000.0,4958000.0]
+  },
+  telecom_yoy: {
+    dates:["2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-02","2026-03","2026-04"],
+    values:[9.0,9.3,8.8,8.5,8.3,8.3,8.2,8.2,8.0,8.0,8.0,7.9,7.7,7.2,6.7,6.2,6.2,6.2,6.8,6.9,6.9,6.2,4.3,4.5,4.0,3.7,3.0,3.0,2.7,2.6,2.6,2.6,3.2,0.9,0.7,1.0,1.4,1.0,0.7,0.8,0.9,0.9,0.9,0.7,-1.7,-1.8,-1.7]
+  },
+  cmobile_arpu: {
+    dates:["2022-Q1","2022-Q2","2022-Q3","2022-Q4","2023-Q1","2023-Q2","2023-Q3","2023-Q4","2024-Q1","2024-Q2","2024-Q3","2024-Q4","2025-Q1","2025-Q2","2025-Q4"],
+    values:[47.5,52.3,50.7,49.0,47.9,52.4,51.2,49.3,47.9,51.0,49.5,48.5,46.9,49.5,46.8]
+  },
+  it_services_yoy: {
+    dates:["2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-02","2026-03"],
+    values:[13.1,13.7,12.3,12.1,12.0,11.0,10.3,10.1,10.1,10.8,11.6,13.9,13.4,14.2,15.3,14.8,14.8,15.0,14.9,15.1,13.5,12.9,13.2,12.9,12.6,12.2,12.5,11.9,12.2,11.8,11.0,10.3,11.0,11.5,12.0,12.9,13.4,13.7,14.3,14.4,14.6,14.7,13.1,13.0]
+  },
+  game_license: {
+    dates:["2022-04","2022-06","2022-07","2022-09","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"],
+    values:[44.0,60.0,135.0,73.0,70.0,84.0,87.0,87.0,86.0,86.0,86.0,89.0,88.0,89.0,87.0,87.0,105.0,115.0,111.0,107.0,95.0,96.0,104.0,105.0,117.0,109.0,113.0,112.0,122.0,123.0,110.0,129.0,118.0,130.0,147.0,127.0,166.0,145.0,159.0,178.0,144.0,177.0,146.0,130.0,147.0,154.0]
+  },
+  game_revenue_yoy: {
+    dates:["2022-04","2022-05","2022-07","2022-08","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04"],
+    values:[-3.4,-6.74,-15.12,-21.91,-18.1,-19.23,-20.02,-16.89,-22.72,-3.21,-2.16,15.96,23.56,37.49,46.08,39.75,28.61,26.14,27.82,1.22,15.12,7.18,-0.27,-3.92,-3.68,-2.83,15.1,14.89,14.4,18.99,16.21,27.65,12.3,13.99,21.93,9.86,0.86,4.62,-13.01,-2.13,7.83,10.81,9.1,4.47,18.96,17.91,11.04]
+  },
+  internet_yoy: {
+    dates:["2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-02","2026-03","2026-04"],
+    values:[13.9,12.7,9.7,9.1,9.1,8.8,8.4,8.2,7.6,6.7,5.9,-1.3,-0.5,0.5,0.1,-0.4,-0.5,-0.3,0.0,0.3,1.0,1.1,4.5,2.3,2.6,2.9,2.9,2.9,2.4,2.1,1.9,1.8,2.1,2.8,3.4,3.2,2.7,2.5,2.3,2.3,2.4,1.8,1.6,1.1,5.3,5.0,5.2]
+  },
+  boxoffice: {
+    dates:["2022-04","2022-05","2022-06","2022-07","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"],
+    values:[507399900.0,641225000.0,1732594700.0,3197117600.0,9237885300.0,3527246600.0,1705928100.0,2560168000.0,3047635300.0,3709144700.0,7938179500.0,7110552600.0,2569738100.0,3383354800.0,1531215400.0,3569600000.0,2324610500.0,9973220300.0,2519051800.0,2011244500.0,2668378800.0,2007873100.0,4871257500.0,3641543200.0,1321193400.0,3280620700.0,1690007900.0,2133565300.0,5704353600.0,14566063700.0,1751663400.0,1087750200.0,1557793000.0,1703526500.0,3626079300.0,5335038600.0,2403201000.0,2337906900.0,3170808700.0,3346123700.0,1763459700.0,7005387300.0,1905469800.0,924043800.0,2462877600.0]
+  }
+};
+
+/* ── 模块专项指标数据（AI算力链/半导体/通信Tab，由 serve_sub4.py 自动更新） ── */
+const moduleData = {
+  'nev-sales-yoy':{name:"新能源汽车销量当月同比",unit:"%",src:"中汽协/乘联会 via iFinD EDB",srcUrl:"https://www.caam.org.cn/",freq:"月度",bull:"同比>30%且持续→IGBT/SiC功率器件需求高景气",bear:"同比回落转负→功率器件需求减弱",logic:"新能源汽车是功率半导体(IGBT/SiC)最大需求来源，纯电车每辆约耗IGBT 100颗，销量增速直接对应器件需求",dates:["2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"],values:[140.0,180.0,110.0,44.6,105.2,130.0,120.0,100.0,93.9,81.7,72.3,51.8,-6.3,55.9,34.8,110.0,60.2,35.2,31.6,27.0,27.7,33.5,30.0,46.4,78.8,-9.2,35.3,33.5,33.3,30.1,27.0,30.0,42.3,49.6,47.4,34.0,29.4,87.1,40.1,44.2,36.9,26.7,27.4,26.8,24.6,20.0,20.6,7.2,0.1,-14.2,1.2,9.7,14.4]},
+  'nev-penetration':{name:"新能源汽车市场渗透率",unit:"%",src:"中汽协/乘联会 via iFinD EDB",srcUrl:"https://www.cpcaauto.com/",freq:"月度",bull:"渗透率持续提升→功率半导体需求结构性增长逻辑持续",bear:"渗透率增速放缓→单纯渗透率驱动增量减弱",logic:"渗透率每提升1%≈约100亿元功率半导体新增市场；高渗透率下关注单车用量升级（更多SiC替代IGBT）",dates:["2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"],values:[16.6,21.8,28.2,27.2,26.6,27.4,26.7,28.3,31.8,30.2,36.3,29.5,25.7,31.6,34.2,32.3,33.3,35.1,36.1,37.3,36.9,37.8,40.4,40.2,32.8,35.8,41.6,43.7,47.0,48.4,51.1,53.9,53.3,52.9,52.3,49.4,41.5,49.5,51.1,51.5,52.9,53.3,54.0,55.2,57.8,57.2,59.3,59.1,38.6,44.9,51.5,61.4,62.9]},
+  'solar-inst-yoy':{name:"光伏发电新增装机量当月同比",unit:"%",src:"国家能源局 via iFinD EDB",srcUrl:"https://www.nea.gov.cn/",freq:"月度",bull:"同比>30%→逆变器/功率器件需求景气",bear:"同比转负或持续下滑→光伏装机景气减弱",logic:"光伏逆变器是功率半导体第二大下游，每GW光伏装机需约500万颗IGBT/MOSFET，装机量直接传导需求",dates:["2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-02","2026-03","2026-04"],values:[234.2,147.8,138.4,139.3,137.4,110.3,101.7,105.8,98.7,88.7,59.1,87.6,154.8,186.2,158.2,154.0,157.5,154.5,145.1,144.8,149.4,147.1,80.3,35.9,24.4,29.3,30.7,27.1,23.7,24.8,27.2,25.9,28.7,30.5,74.6,150.0,107.1,80.7,64.7,49.3,39.5,33.2,14.2,-17.7,-30.7,-51.5]},
+  'wind-inst-yoy':{name:"风电新增装机量当月同比",unit:"%",src:"国家能源局 via iFinD EDB",srcUrl:"https://www.nea.gov.cn/",freq:"月度",bull:"同比>20%→风电用功率器件景气",bear:"风电装机下滑→相关功率器件需求收缩",logic:"风电变流器是IGBT重要应用，每GW风电需约300-400万颗IGBT，与光伏共同构成功率半导体新能源双驱动",dates:["2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-03","2026-04","2026-05"],values:[23.8,14.5,-0.7,16.7,5.7,28.2,25.8,19.2,5.7,15.4,0.2,20.9,15.3,-1.8,25.0,-11.5,-1.6,-13.1,26.6,7.4,16.8,-8.4,-3.3,12.7,0.9,6.6,31.6,34.0,-3.3,6.6,8.2,12.7,11.0,3.2,5.5,20.2,-7.6,-11.9,22.0,8.9,-17.3,-5.0,0.5]},
+  'cable-export':{name:"中国光缆出口金额当月值",unit:"亿美元",src:"中国海关总署 via iFinD EDB",srcUrl:"https://stats.customs.gov.cn/",freq:"月度",bull:"出口额同比高增→全球基础设施需求旺，长飞/亨通受益",bear:"出口额持续下滑→全球需求疲弱，关注价格竞争风险",logic:"中国光缆出口占全球40%+，出口额是海外需求景气最直接指标；海外收入占比高的企业弹性更大",dates:["2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04","2026-05"],values:[219349414.0,185845511.0,228115650.0,236211633.0,243316723.0,235786453.0,282684050.0,229072734.0,240961339.0,191832837.0,226084079.0,211053266.0,194894834.0,145068847.0,248390519.0,209277027.0,213638248.0,197396415.0,189835709.0,194468508.0,181472642.0,168326335.0,178915077.0,222464089.0,181611485.0,156669895.0,163341152.0,187698239.0,204238911.0,217972288.0,206675865.0,195117721.0,188918951.0,199297856.0,222895033.0,239368256.0,226130965.0,161521568.0,285638752.0,288105522.0,296528737.0,274924758.0,323350702.0,278145043.0,267028513.0,255370115.0,295848066.0,303615233.0,307148579.0,220149593.0,299443881.0,352738563.0,443883885.0]},
+  'phone-5g-pct':{name:"5G手机出货量占比（月度）",unit:"%",src:"中国信通院 via iFinD EDB",srcUrl:"https://www.caict.ac.cn/",freq:"月度",bull:"5G渗透率提升→射频前端单机价值量升级，卓胜微等国产射频受益",bear:"渗透率停滞→射频升级带来的量价提升逻辑受阻",logic:"5G手机射频价值量约4G的2-3倍（12-15美元 vs 5美元），渗透率是射频前端价值量升级的核心驱动",dates:["2022-01","2022-02","2022-03","2022-04","2022-05","2022-06","2022-07","2022-08","2022-09","2022-10","2022-11","2022-12","2023-01","2023-02","2023-03","2023-04","2023-05","2023-06","2023-07","2023-08","2023-09","2023-10","2023-11","2023-12","2024-01","2024-02","2024-03","2024-04","2024-05","2024-06","2024-07","2024-08","2024-09","2024-10","2024-11","2024-12","2025-01","2025-02","2025-03","2025-04","2025-05","2025-06","2025-07","2025-08","2025-09","2025-10","2025-11","2025-12","2026-01","2026-02","2026-03","2026-04"],values:[79.72,76.52,75.42,80.67,85.26,82.19,73.7,75.18,72.19,80.13,77.12,83.4,87.06,83.27,76.68,71.14,77.46,78.21,81.17,82.41,86.3,90.65,86.8,85.59,82.34,87.9,82.96,84.05,84.18,88.84,85.33,82.15,87.96,90.05,92.28,88.14,86.77,91.46,85.32,79.44,89.35,81.58,80.5,88.4,86.3,90.9,91.6,90.4,86.9,94.9,93.0,96.1]},
+  'txc-revyoy':{name:"中际旭创/天孚通信单季营收同比",unit:"%",src:"iFinD A股财务数据",srcUrl:"https://www.51ifind.com/",freq:"季度",bull:"营收同比>50%且加速→AI算力光模块/光器件订单持续兑现",bear:"营收增速显著放缓或下滑→需求阶段性消化或景气拐点",logic:"中际旭创是全球最大光收发模块制造商（美国云厂商最大客户），天孚通信深耕光器件/光引擎，两者营收同比是AI算力光互联景气最直接A股财务验证",dates:["2022-Q1","2022-Q2","2022-Q3","2022-Q4","2023-Q1","2023-Q2","2023-Q3","2023-Q4","2024-Q1","2024-Q2","2024-Q3","2024-Q4","2025-Q1","2025-Q2","2025-Q3","2025-Q4","2026-Q1"],values:[29.04,18.48,21.57,16.06,-5.27,14.56,44.26,85.79,159.27,146.71,85.01,47.3,33.46,59.79,65.6,73.68,116.47]},
+  'bfc-order':{name:"北方华创/中微公司合同负债同比",unit:"%",src:"iFinD A股财务数据",srcUrl:"https://www.cninfo.com.cn/",freq:"季度",bull:"合同负债同比>30%→国产半导体设备订单持续扩张，景气延续",bear:"合同负债增速下滑或转负→设备需求阶段性放缓，关注交付节奏",logic:"合同负债=客户预付款（尚未确认收入），是设备交付前的领先景气指标；北方华创覆盖刻蚀/薄膜/热处理，中微覆盖刻蚀/MOCVD",dates:["2022-Q1","2022-Q2","2022-Q3","2022-Q4","2023-Q1","2023-Q2","2023-Q3","2023-Q4","2024-Q1","2024-Q2","2024-Q3","2024-Q4","2025-Q1","2025-Q2","2025-Q3","2025-Q4","2026-Q1"],values:[53.68,45.24,62.01,48.55,55.06,32.58,38.14,45.59,41.29,41.76,33.04,43.36,36.65,36.55,44.47,23.88,29.96]},
+  'yingweike-order':{name:"英维克/申菱环境合同负债同比",unit:"%",src:"iFinD A股财务数据",srcUrl:"https://www.cninfo.com.cn/",freq:"季度",bull:"合同负债同比>50%→AI数据中心液冷/温控订单爆发，景气高位",bear:"合同负债增速转负→温控订单扩张停滞，需求担忧升温",logic:"合同负债代表在手未兑现订单，是AI数据中心液冷温控需求的领先财务验证；英维克是液冷龙头，申菱环境专注机房精密空调",dates:["2023-Q4","2024-Q2","2024-Q4","2025-Q2","2025-Q4"],values:[32.62,16.43,14.52,48.74,-6.3]}
+};
+
+const _sub4Insts = {};
+
+function _hexAlpha(hex, a) {
+  var r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
+}
+
+function _sub4BaseOpt() {
+  return {
+    animation: false,
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#1a1d2e',
+      borderColor: '#2e3250',
+      textStyle: {color: '#e2e8f0', fontSize: 11}
+    },
+    grid: {left: 52, right: 12, top: 14, bottom: 56}
+  };
+}
+
+function renderSub4Bar(id, dates, values, color, unit) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (_sub4Insts[id]) { _sub4Insts[id].dispose(); }
+  var chart = echarts.init(el, 'dark', {renderer: 'canvas'});
+  var opt = _sub4BaseOpt();
+  opt.tooltip.formatter = function(p) {
+    var v = p[0];
+    var sign = v.value >= 0 ? '+' : '';
+    var c = v.value >= 0 ? color : '#ef4444';
+    return v.name + '<br/><strong style="color:' + c + '">' + sign + v.value + unit + '</strong>';
+  };
+  opt.xAxis = {
+    type: 'category', data: dates,
+    axisLabel: {color: '#64748b', fontSize: 9, rotate: 45, interval: 'auto'},
+    axisLine: {lineStyle: {color: '#2e3250'}},
+    axisTick: {show: false}
+  };
+  opt.yAxis = {
+    type: 'value', name: unit,
+    nameTextStyle: {color: '#64748b', fontSize: 10},
+    axisLabel: {color: '#64748b', fontSize: 10},
+    splitLine: {lineStyle: {color: '#1e2235'}},
+    axisLine: {show: false}
+  };
+  opt.series = [{
+    data: values, type: 'bar', barMaxWidth: 14,
+    itemStyle: {
+      color: function(p) { return p.value >= 0 ? color : '#ef4444'; },
+      borderRadius: function(p) { return p.value >= 0 ? [2,2,0,0] : [0,0,2,2]; }
+    },
+    markLine: {
+      silent: true, symbol: 'none',
+      lineStyle: {color: '#475569', width: 1, type: 'dashed'},
+      data: [{yAxis: 0}]
+    }
+  }];
+  chart.setOption(opt);
+  _sub4Insts[id] = chart;
+  window.addEventListener('resize', function() { chart.resize(); });
+}
+
+function renderSub4Line(id, dates, values, color, unit) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  if (_sub4Insts[id]) { _sub4Insts[id].dispose(); }
+  var chart = echarts.init(el, 'dark', {renderer: 'canvas'});
+  var opt = _sub4BaseOpt();
+  opt.grid.left = 64;
+  opt.tooltip.formatter = function(p) {
+    var v = p[0];
+    return v.name + '<br/><strong style="color:' + color + '">' + v.value + ' ' + unit + '</strong>';
+  };
+  opt.xAxis = {
+    type: 'category', data: dates,
+    axisLabel: {color: '#64748b', fontSize: 9, rotate: 45, interval: 1},
+    axisLine: {lineStyle: {color: '#2e3250'}},
+    axisTick: {show: false}
+  };
+  opt.yAxis = {
+    type: 'value', name: unit,
+    nameTextStyle: {color: '#64748b', fontSize: 10},
+    axisLabel: {color: '#64748b', fontSize: 10},
+    splitLine: {lineStyle: {color: '#1e2235'}},
+    axisLine: {show: false},
+    min: function(v) { return Math.floor(v.min * 0.95); }
+  };
+  opt.series = [{
+    data: values, type: 'line', smooth: true,
+    symbol: 'circle', symbolSize: 5,
+    lineStyle: {color: color, width: 2.5},
+    itemStyle: {color: color},
+    areaStyle: {color: {type:'linear',x:0,y:0,x2:0,y2:1,colorStops:[
+      {offset:0, color:_hexAlpha(color,0.35)},
+      {offset:1, color:_hexAlpha(color,0.02)}
+    ]}}
+  }];
+  chart.setOption(opt);
+  _sub4Insts[id] = chart;
+  window.addEventListener('resize', function() { chart.resize(); });
+}
+
+function initSub4Charts(data) {
+  data = data || sub4Data;
+  /* 电子 */
+  renderSub4Bar('chart-global-semi-yoy', data.global_semi_yoy.dates, data.global_semi_yoy.values, '#a855f7', '%');
+  renderSub4Bar('chart-ic-yoy',          data.ic_yoy.dates,          data.ic_yoy.values,          '#a855f7', '%');
+  renderSub4Bar('chart-phone-ship-yoy',  data.phone_ship_yoy.dates,  data.phone_ship_yoy.values,  '#a855f7', '%');
+  renderSub4Bar('chart-elec-indpro-yoy', data.elec_indpro_yoy.dates, data.elec_indpro_yoy.values, '#a855f7', '%');
+  /* 通信 */
+  renderSub4Line('chart-5g-stations',    data.five_g.dates,           data.five_g.values,           '#10b981', '万座');
+  renderSub4Bar('chart-telecom-yoy',     data.telecom_yoy.dates,      data.telecom_yoy.values,      '#10b981', '%');
+  renderSub4Line('chart-cmobile-arpu',   data.cmobile_arpu.dates,     data.cmobile_arpu.values,     '#10b981', '元');
+  /* 计算机 */
+  renderSub4Bar('chart-it-services-yoy', data.it_services_yoy.dates,  data.it_services_yoy.values,  '#818cf8', '%');
+  /* 传媒 */
+  renderSub4Bar('chart-game-license',    data.game_license.dates,     data.game_license.values,     '#f59e0b', '个');
+  renderSub4Bar('chart-game-revenue-yoy',data.game_revenue_yoy.dates, data.game_revenue_yoy.values, '#f59e0b', '%');
+  renderSub4Bar('chart-internet-yoy',    data.internet_yoy.dates,     data.internet_yoy.values,     '#f59e0b', '%');
+  renderSub4Bar('chart-boxoffice',       data.boxoffice.dates,        data.boxoffice.values,        '#f59e0b', '亿元');
+}
+
+function tryFetchSub4Live() {
+  if (!window.fetch) return;
+  var ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  var timer = ctrl ? setTimeout(function(){ctrl.abort();}, 1500) : null;
+  fetch('http://localhost:5050/sub4_cache.json', ctrl ? {signal: ctrl.signal} : {})
+    .then(function(r){ clearTimeout(timer); return r.json(); })
+    .then(function(d){
+      initSub4Charts(d);
+      var el = document.getElementById('sub4UpdateTime');
+      if (el) el.textContent = '最后更新：' + d.updated + '（实时）';
+    })
+    .catch(function(){});
+}
+
+/* ── 更新弹窗逻辑 ─────────────────────────────────────────────────────── */
+function triggerUpdate() {
+  var btn   = document.getElementById('updateBtn');
+  var modal = document.getElementById('updateModal');
+  var title = document.getElementById('updateModalTitle');
+  var log   = document.getElementById('updateModalLog');
+  var close = document.getElementById('updateModalClose');
+
+  btn.disabled = true;
+  title.textContent = '🔄 数据更新中…';
+  log.innerHTML = '<span>正在连接本地服务 localhost:5050 …</span>\n';
+  close.style.display = 'none';
+  modal.style.display = 'flex';
+
+  fetch('http://localhost:5050/update', {method: 'POST'})
+    .then(function(r) {
+      if (r.status === 409) return r.json().then(function(d) { throw {busy: true, msg: d.msg}; });
+      if (!r.ok) throw {msg: 'HTTP ' + r.status};
+      return r.json();
+    })
+    .then(function(data) {
+      log.innerHTML = '';
+      data.results.forEach(function(res) {
+        var sep = document.createElement('span');
+        sep.className = 'log-sep';
+        sep.textContent = '── ' + res.script + ' (exit ' + res.code + ') ──────────────';
+        log.appendChild(sep);
+        var lines = res.output.split('\n');
+        lines.forEach(function(line) {
+          var span = document.createElement('span');
+          if (/\[OK\]/.test(line))   span.className = 'log-ok';
+          else if (/\[WARN\]/.test(line)) span.className = 'log-warn';
+          else if (/\[ERROR\]/.test(line)) span.className = 'log-err';
+          span.textContent = line + '\n';
+          log.appendChild(span);
+        });
+      });
+
+      var allOk = data.results.every(function(r) { return r.code === 0; });
+      title.textContent = allOk ? '✅ 更新完成' : '⚠️ 更新完成（部分失败）';
+
+      // 刷新当前已打开模块的数据
+      tryFetchSub4Live();
+      renderCalendar();
+    })
+    .catch(function(err) {
+      if (err && err.busy) {
+        title.textContent = '⏳ 更新任务已在运行';
+        log.innerHTML = '<span class="log-warn">' + err.msg + '</span>\n';
+      } else {
+        title.textContent = '❌ 无法连接本地服务';
+        log.innerHTML =
+          '<span class="log-err">连接 localhost:5050 失败。</span>\n\n' +
+          '<span>请先双击 open_platform.bat 启动本地服务，\n' +
+          '或在命令行运行：python serve_sub4.py</span>\n';
+      }
+    })
+    .finally(function() {
+      btn.disabled = false;
+      close.style.display = '';
+      log.scrollTop = log.scrollHeight;
+    });
+}
+
+function closeUpdateModal() {
+  document.getElementById('updateModal').style.display = 'none';
+}
+// ESC 键关闭弹窗
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeUpdateModal();
+});
+</script>
+
+</body>
+</html>
